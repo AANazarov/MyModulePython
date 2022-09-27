@@ -2112,8 +2112,7 @@ def regression_error_metrics(model, model_name=''):
     MAE = (1/n_fit) * np.sum(abs(Y-Ycalc))
     MSPE = (1/n_fit) *  np.sum(((Y-Ycalc)/Y)**2)
     MAPE = (1/n_fit) *  np.sum(abs((Y-Ycalc)/Y))
-    
-    
+        
     model_error_metrics = {
         'MSE': MSE,
         'RMSE': RMSE,
