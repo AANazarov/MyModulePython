@@ -47,6 +47,10 @@ import scipy as sci
 import scipy.stats as sps
 
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import statsmodels.graphics.api as smg
+import statsmodels.stats.api as sms
+from statsmodels.compat import lzip
 
 import statistics as stat    # module 'statistics' has no attribute '__version__'
 
@@ -408,7 +412,124 @@ def descriptive_characteristics(
         return result, result_auxiliary
     else:
         return result
+
+
+
+#==============================================================================
+#               ФУНКЦИИ ДЛЯ ПРОВЕРКИ РАЗЛИЧНЫХ ГИПОТЕЗ
+#==============================================================================
+
+
+#------------------------------------------------------------------------------
+#   Функция Mann_Whitney_test_trend_check
+#
+#   Проверяет гипотезу о наличии тренда (т.е. существенном различии двух частей
+#   временного ряда) по критерию Манна-Уитни
+#------------------------------------------------------------------------------    
+
+def Mann_Whitney_test_trend_check(
+        data1, data2,    # два части, на которые следует разбить исходный массив значений
+        use_continuity=True,    # поправка на непрерывность
+        alternative='two-sided',    # вид альтернативной гипотезы
+        method='auto',    # метод расчета уровня значимости
+        p_level=0.95,
+        DecPlace=5):
     
+    a_level = 1 - p_level
+        
+    result = sps.mannwhitneyu(
+        data1, data2,
+        use_continuity=use_continuity,
+        alternative=alternative,
+        method=method)
+    s_calc = result.statistic    # расчетное значение статистики критерия
+    a_calc = result.pvalue    # расчетный уровень значимости
+    
+    print(f"Расчетное значение статистики критерия: s_calc = {round(s_calc, DecPlace)}")
+    print(f"Расчетный уровень значимости: a_calc = {round(a_calc, DecPlace)}")
+    print(f"Заданный уровень значимости: a_level = {round(a_level, DecPlace)}")
+          
+    if a_calc >= a_level:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} >= a_level = {round(a_level, DecPlace)}" + \
+            ", то нулевая гипотеза об отсутствии сдвига в выборках ПРИНИМАЕТСЯ, т.е. сдвиг ОТСУТСТВУЕТ"
+    else:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} < a_level = {round(a_level, DecPlace)}" + \
+            ", то нулевая гипотеза об отсутствии сдвига в выборках ОТКЛОНЯЕТСЯ, т.е. сдвиг ПРИСУТСТВУЕТ"
+    print(conclusion_ShW_test)
+    return    
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Abbe_test
+#
+#   Проверяет гипотезу о наличии сдвига (тренда) средних значений
+#   по критерию Аббе
+#------------------------------------------------------------------------------
+
+def Abbe_test(X, p_level=0.95):
+    a_level = 1 - p_level
+    X = np.array(X)
+    n = len(X)
+        
+    # расчетное значение статистики критерия
+    if n >= 4:
+        Xmean = np.mean(X)
+        sum1 = np.sum((X - Xmean)**2)
+        sum2 = np.sum([(X[i+1] - X[i])**2 for i in range(n-1)])
+        q_calc = 0.5*sum2/sum1
+    else:
+        q_calc = '-'
+        q_table = '-'
+        a_calc = '-'
+    
+    # табличное значение статистики критерия при 4 <= n <= 60
+    if n >= 4 and n <= 60:
+        Abbe_table_df = pd.read_csv(
+            filepath_or_buffer='table/Abbe_test_table.csv',
+            sep=';',
+            index_col='n')
+        p_level_dict = {
+            0.95: Abbe_table_df.columns[0],
+            0.99: Abbe_table_df.columns[1]}
+        f_lin = sci.interpolate.interp1d(Abbe_table_df.index, Abbe_table_df[p_level_dict[p_level]])
+        q_table = float(f_lin(n))
+    
+    #if n >= 20:
+    #    a_calc = 1 - sci.stats.norm.cdf(q_calc, loc=1, scale=sqrt((n-2)/(n**2-1)))
+    
+    # табличное значение статистики критерия при n > 60 (см.Кобзарь, с.517)
+    if n > 60:
+        u_p = sps.norm.ppf(1-p_level, 0, 1)
+        q_table = 1 + u_p / sqrt(n + 0.5*(1 + u_p**2))
+        Q_calc = -(1 - q_calc) * sqrt((2*n + 1)/(2 - (1-q_calc)**2))
+        Q_table = u_p
+        
+    # проверка гипотезы
+    if n >= 4:
+        conclusion = 'independent observations' if q_calc >= q_table else 'dependent observations'    
+    else:        
+        conclusion = 'count less than 4'
+        
+    # формируем результат            
+    result = pd.DataFrame({
+        'n': (n),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'q_calc': (q_calc),
+        'q_table': (q_table if n >= 4 else '-'),
+        'q_calc ≥ q_table': (q_calc >= q_table if n >= 4 else '-'),
+        'Q_calc (for n > 60)': (Q_calc if n > 60 else '-'),
+        'Q_table': (Q_table if n > 60 else '-'),
+        'Q_calc ≥ Q_table': (Q_calc >= Q_table if n > 60 else '-'),
+        #'a_calc': (a_calc if n > 20 else '-'),
+        #'a_calc ≤ a_level': (a_calc <= a_level if n > 20 else '-'),
+        'conclusion': (conclusion)
+        },
+        index=['Abbe test'])
+    
+    return result
+
     
 
 #==============================================================================
@@ -455,7 +576,9 @@ def graph_scatterplot_sns(
         palette=['orange'], color=color,
         ax=axes)
     axes.set_xlim(Xmin, Xmax)
-    axes.set_ylim(Ymin, Ymax)        
+    axes.set_ylim(Ymin, Ymax)       
+    axes.axvline(x = 0, color = 'k', linewidth = 1)
+    axes.axhline(y = 0, color = 'k', linewidth = 1)
     axes.set_xlabel(x_label, fontsize = label_fontsize)
     axes.set_ylabel(y_label, fontsize = label_fontsize)
     axes.tick_params(labelsize = tick_fontsize)
@@ -565,6 +688,8 @@ def graph_plot_sns_np(
         ax=axes)
     axes.set_xlabel(x_label, fontsize = label_fontsize)
     axes.set_ylabel(y_label, fontsize = label_fontsize)
+    #axes.axvline(x = 0, color = 'k', linewidth = 1)
+    #axes.axhline(y = 0, color = 'k', linewidth = 1)
     axes.tick_params(labelsize = tick_fontsize)
     axes.tick_params(labelsize = tick_fontsize)
     axes.legend(prop={'size': label_legend_fontsize})
@@ -1342,6 +1467,7 @@ def graph_ecdf_cdf_mpl(
     return    
 
 
+
 #------------------------------------------------------------------------------
 #   Функция graph_regression_plot_sns
 #------------------------------------------------------------------------------
@@ -1351,18 +1477,20 @@ def graph_regression_plot_sns(
     regression_model,
     Xmin=None, Xmax=None,
     Ymin=None, Ymax=None,
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
+    display_residuals=False,
+    title_figure=None, title_figure_fontsize=None,
+    title_axes=None, title_axes_fontsize=None,
     x_label=None,
     y_label=None,
-    label_fontsize=14, tick_fontsize=12, 
+    label_fontsize=None, tick_fontsize=12, 
     label_legend_regr_model='', label_legend_fontsize=12,
     s=50, linewidth_regr_model=2,
-    graph_size=(297/INCH, 210/INCH),
+    graph_size=None,
     file_name=None):
     
     X = np.array(X)
     Y = np.array(Y)
+    Ycalc = Y - regression_model(X)
     
     if not(Xmin) and not(Xmax):
         Xmin=min(X)*0.99
@@ -1371,40 +1499,117 @@ def graph_regression_plot_sns(
         Ymin=min(Y)*0.99
         Ymax=max(Y)*1.01       
     
-    fig, axes = plt.subplots(figsize=graph_size)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    # график с остатками
+    # ------------------
+    if display_residuals:
+        if not(graph_size):
+            graph_size = (297/INCH, 420/INCH/1.5)
+        if not(title_figure_fontsize):
+            title_figure_fontsize = 18
+        if not(title_axes_fontsize):            
+            title_axes_fontsize=16
+        if not(label_fontsize):                        
+            label_fontsize=13
+        if not(label_legend_fontsize):
+            label_legend_fontsize=12
+        fig = plt.figure(figsize=graph_size)
+        fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+        ax1 = plt.subplot(2,1,1)
+        ax2 = plt.subplot(2,1,2)
+                       
+        # фактические данные
+        ax1.set_title(title_axes, fontsize = title_axes_fontsize)
+        sns.scatterplot(
+            x=X, y=Y,
+            label='фактические данные',
+            s=s,
+            color='red',
+            ax=ax1)
+        ax1.set_xlim(Xmin, Xmax)
+        ax1.set_ylim(Ymin, Ymax)
+        ax1.axvline(x = 0, color = 'k', linewidth = 1)
+        ax1.axhline(y = 0, color = 'k', linewidth = 1)
+        #ax1.set_xlabel(x_label, fontsize = label_fontsize)
+        ax1.set_ylabel(y_label, fontsize = label_fontsize)
+        ax1.tick_params(labelsize = tick_fontsize)
+                
+        # график регрессионной модели
+        nx = 100
+        hx = (Xmax - Xmin)/(nx - 1)
+        x1 = np.linspace(Xmin, Xmax, nx)
+        y1 = regression_model(x1)
+        sns.lineplot(
+            x=x1, y=y1,
+            color='blue',
+            linewidth=linewidth_regr_model,
+            legend=True,
+            label=label_legend_regr_model,
+            ax=ax1)
+        ax1.legend(prop={'size': label_legend_fontsize})
+        
+        # график остатков
+        ax2.set_title('График остатков', fontsize = title_axes_fontsize)
+        ax2.set_xlim(Xmin, Xmax)
+        #ax2.set_ylim(Ymin, Ymax)
+        sns.scatterplot(
+            x=X, y=Ycalc,
+            #label='фактические данные',
+            s=s,
+            color='orange',
+            ax=ax2)
+        
+        ax2.axvline(x = 0, color = 'k', linewidth = 1)
+        ax2.axhline(y = 0, color = 'k', linewidth = 1)
+        ax2.set_xlabel(x_label, fontsize = label_fontsize)
+        ax2.set_ylabel(r'$ΔY = Y - Y_{calc}$', fontsize = label_fontsize)
+        ax2.tick_params(labelsize = tick_fontsize)
     
-    # фактические данные
-    sns.scatterplot(
-        x=X, y=Y,
-        label='фактические данные',
-        s=s,
-        color='red',
-        ax=axes)
+    # график без остатков
+    # -------------------
+    else:
+        if not(graph_size):
+            graph_size = (297/INCH, 210/INCH)
+        if not(title_figure_fontsize):
+            title_figure_fontsize = 18
+        if not(title_axes_fontsize):            
+            title_axes_fontsize=16
+        if not(label_fontsize):                        
+            label_fontsize=14
+        if not(label_legend_fontsize):
+            label_legend_fontsize=12
+        fig, axes = plt.subplots(figsize=graph_size)
+        fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+        axes.set_title(title_axes, fontsize = title_axes_fontsize)
     
-    # график регрессионной модели
-    nx = 100
-    hx = (Xmax - Xmin)/(nx - 1)
-    x1 = np.linspace(Xmin, Xmax, nx)
-    y1 = regression_model(x1)
-    sns.lineplot(
-        x=x1, y=y1,
-        color='blue',
-        linewidth=linewidth_regr_model,
-        legend=True,
-        label=label_legend_regr_model,
-        ax=axes)
+        # фактические данные
+        sns.scatterplot(
+            x=X, y=Y,
+            label='фактические данные',
+            s=s,
+            color='red',
+            ax=axes)
     
-    # график остатков
+        # график регрессионной модели
+        nx = 100
+        hx = (Xmax - Xmin)/(nx - 1)
+        x1 = np.linspace(Xmin, Xmax, nx)
+        y1 = regression_model(x1)
+        sns.lineplot(
+            x=x1, y=y1,
+            color='blue',
+            linewidth=linewidth_regr_model,
+            legend=True,
+            label=label_legend_regr_model,
+            ax=axes)
     
-    axes.set_xlim(Xmin, Xmax)
-    axes.set_ylim(Ymin, Ymax)        
-    axes.set_xlabel(x_label, fontsize = label_fontsize)
-    axes.set_ylabel(y_label, fontsize = label_fontsize)
-    axes.tick_params(labelsize = tick_fontsize)
-    #axes.tick_params(labelsize = tick_fontsize)
-    axes.legend(prop={'size': label_legend_fontsize})
+        axes.set_xlim(Xmin, Xmax)
+        axes.set_ylim(Ymin, Ymax)    
+        axes.axvline(x = 0, color = 'k', linewidth = 1)
+        axes.axhline(y = 0, color = 'k', linewidth = 1)
+        axes.set_xlabel(x_label, fontsize = label_fontsize)
+        axes.set_ylabel(y_label, fontsize = label_fontsize)
+        axes.tick_params(labelsize = tick_fontsize)
+        axes.legend(prop={'size': label_legend_fontsize})
         
     plt.show()
     if file_name:
@@ -2091,6 +2296,71 @@ def line_corr_sign_check(X, Y, p_level=0.95, orientation='XY'):
     return result
 
 
+#------------------------------------------------------------------------------
+#   Функция rank_corr_coef_check
+#------------------------------------------------------------------------------
+
+def rank_corr_coef_check(X, Y, p_level=0.95, scale='Evans'):
+    a_level = 1 - p_level
+    X = np.array(X)
+    Y = np.array(Y)
+    n_X = len(X)
+    n_Y = len(Y)
+    # коэффициент ранговой корреляции Кендалл
+    rank_corr_coef_tau, a_rank_corr_coef_tau_calc = sps.kendalltau(X, Y)
+    # коэффициент ранговой корреляции Спирмена
+    rank_corr_coef_spearman, a_rank_corr_coef_spearman_calc = sps.spearmanr(X, Y)
+    # критические значения коэффициентов
+    if n_X >= 10:
+        u_p_tau = sps.norm.ppf(p_level, 0, 1)    # табл.значение квантиля норм.распр.
+        rank_corr_coef_tau_crit_value = u_p_tau * sqrt(2*(2*n_X + 5) / (9*n_X*(n_X-1)))
+        u_p_spearman = sps.norm.ppf((1+p_level)/2, 0, 1)
+        rank_corr_coef_spearman_crit_value = u_p_spearman * 1/sqrt(n_X-1)
+    else:
+        rank_corr_coef_tau_crit_value = '-'
+        rank_corr_coef_spearman_crit_value = '-'
+    # проверка гипотезы о значимости
+    conclusion_tau = 'significance' if a_rank_corr_coef_tau_calc <= a_level else 'not significance'
+    conclusion_spearman = 'significance' if a_rank_corr_coef_spearman_calc <= a_level else 'not significance'
+    # оценка тесноты связи
+    if scale=='Cheddok':
+        conclusion_scale_tau = scale + ': ' + Cheddock_scale_check(rank_corr_coef_tau)
+        conclusion_scale_spearman = scale + ': ' + Cheddock_scale_check(rank_corr_coef_spearman)
+    elif scale=='Evans':
+        conclusion_scale_tau = scale + ': ' + Evans_scale_check(rank_corr_coef_tau)
+        conclusion_scale_spearman = scale + ': ' + Evans_scale_check(rank_corr_coef_spearman)
+    # доверительные интервалы (только для коэффициента Кендалла - см.[Айвазян, т.2, с.116])
+    if conclusion_tau == 'significance':
+        rank_corr_coef_tau_delta = sps.norm.ppf((1+p_level)/2, 0, 1) * sqrt(2/n_X * (1 - rank_corr_coef_tau**2))
+        rank_corr_coef_tau_int_low = rank_corr_coef_tau - rank_corr_coef_tau_delta if rank_corr_coef_tau - rank_corr_coef_tau_delta else 0
+        rank_corr_coef_tau_int_high = rank_corr_coef_tau + rank_corr_coef_tau_delta if rank_corr_coef_tau + rank_corr_coef_tau_delta <= 1 else 1
+    # формируем результат            
+    result = pd.DataFrame({
+        'name': ('Kendall', 'Spearman'),
+        'notation': (chr(964), chr(961)),
+        'coef_value': (rank_corr_coef_tau, rank_corr_coef_spearman),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'a_calc': (a_rank_corr_coef_tau_calc, a_rank_corr_coef_spearman_calc),
+        'a_calc <= a_level': (a_rank_corr_coef_tau_calc <= a_level, a_rank_corr_coef_spearman_calc <= a_level),
+        'crit_value': (rank_corr_coef_tau_crit_value, rank_corr_coef_spearman_crit_value),
+        'crit_value >= coef_value': (
+            rank_corr_coef_tau >= rank_corr_coef_tau_crit_value if rank_corr_coef_tau_crit_value != '-' else '-',
+            rank_corr_coef_spearman >= rank_corr_coef_spearman_crit_value if rank_corr_coef_spearman_crit_value != '-' else '-'),
+        'significance_check': (conclusion_tau, conclusion_spearman),
+        'conf_int_low': (
+            rank_corr_coef_tau_int_low if conclusion_tau == 'significance' else '-',
+            '-'),
+        'conf_int_high': (
+            rank_corr_coef_tau_int_high if conclusion_tau == 'significance' else '-',
+            '-'),
+        'scale': (conclusion_scale_tau, conclusion_scale_spearman)
+        })
+    
+    return result
+
+
+
 
 #==============================================================================
 #               ФУНКЦИИ ДЛЯ РЕГРЕССИОННОГО АНАЛИЗА
@@ -2101,18 +2371,30 @@ def line_corr_sign_check(X, Y, p_level=0.95, orientation='XY'):
 #   Функция regression_error_metrics
 #------------------------------------------------------------------------------
 
-def regression_error_metrics(model, model_name=''):
-    model_fit = model.fit()
-    Ycalc = model_fit.predict()
-    n_fit = model_fit.nobs
-    Y = model.endog
-    
-    MSE = (1/n_fit) * np.sum((Y-Ycalc)**2)
-    RMSE = sqrt(MSE)
-    MAE = (1/n_fit) * np.sum(abs(Y-Ycalc))
-    MSPE = (1/n_fit) *  np.sum(((Y-Ycalc)/Y)**2)
-    MAPE = (1/n_fit) *  np.sum(abs((Y-Ycalc)/Y))
+def regression_error_metrics(model=None, Yfact=None, Ycalc=None, model_name=''):
         
+    if not(model==None):
+        model_fit = model.fit()
+        Ycalc = model_fit.predict()
+        n_fit = model_fit.nobs
+        Yfact = model.endog
+        
+        MSE = (1/n_fit) * np.sum((Yfact-Ycalc)**2)
+        RMSE = sqrt(MSE)
+        MAE = (1/n_fit) * np.sum(abs(Yfact-Ycalc))
+        MSPE = (1/n_fit) *  np.sum(((Yfact-Ycalc)/Yfact)**2)
+        MAPE = (1/n_fit) *  np.sum(abs((Yfact-Ycalc)/Yfact))
+    
+    else:
+        Yfact = np.array(Yfact)
+        Ycalc = np.array(Ycalc)
+        n_fit = len(Yfact)
+        MSE = (1/n_fit) * np.sum((Yfact-Ycalc)**2)
+        RMSE = sqrt(MSE)
+        MAE = (1/n_fit) * np.sum(abs(Yfact-Ycalc))
+        MSPE = (1/n_fit) *  np.sum(((Yfact-Ycalc)/Yfact)**2)
+        MAPE = (1/n_fit) *  np.sum(abs((Yfact-Ycalc)/Yfact))        
+    
     model_error_metrics = {
         'MSE': MSE,
         'RMSE': RMSE,
@@ -2166,6 +2448,8 @@ def regression_model_adequacy_check(
     model_fit,
     p_level: float=0.95,
     model_name=''):
+    
+    a_level = 1 - p_level
     
     n = int(model_fit.nobs)
     p = int(model_fit.df_model)    # Число степеней свободы регрессии, равно числу переменных модели (за исключением константы, если она присутствует)
@@ -2441,6 +2725,103 @@ def White_test(
     return result
 
 
+
+#------------------------------------------------------------------------------
+#   Функция Durbin_Watson_test
+#------------------------------------------------------------------------------
+
+def Durbin_Watson_test(
+    data,
+    m = None,
+    p_level: float=0.95):
+    
+    a_level = 1 - p_level
+    data = np.array(data)
+    n = len(data)
+    
+    # расчетное значение статистики критерия
+    DW_calc = sms.stattools.durbin_watson(data)
+    
+    # табличное значение статистики критерия
+    if (n >= 15) and (n <= 100):
+        # восстанавливаем структуру DataFrame из csv-файла
+        DW_table_df = pd.read_csv(
+            filepath_or_buffer='table/Durbin_Watson_test_table.csv',
+            sep=';',
+            #index_col='n'
+            )
+                            
+        DW_table_df = DW_table_df.rename(columns={'Unnamed: 0': 'n'})
+        DW_table_df = DW_table_df.drop([0, 1, 2])
+        
+        for col in DW_table_df.columns:
+            DW_table_df[col] = pd.to_numeric(DW_table_df[col], errors='ignore')
+            
+        DW_table_df = DW_table_df.set_index('n')
+
+        DW_table_df.columns = pd.MultiIndex.from_product(
+            [['p=0.95', 'p=0.975', 'p=0.99'],
+            ['m=1', 'm=2', 'm=3', 'm=4', 'm=5'],
+            ['dL','dU']])    
+        
+        # интерполяция табличных значений
+        key = [f'p={p_level}', f'm={m}']
+        f_lin_L = sci.interpolate.interp1d(DW_table_df.index, DW_table_df[tuple(key + ['dL'])])
+        f_lin_U = sci.interpolate.interp1d(DW_table_df.index, DW_table_df[tuple(key + ['dU'])])
+        DW_table_L = float(f_lin_L(n))
+        DW_table_U = float(f_lin_U(n))
+                   
+        # проверка гипотезы
+        Durbin_Watson_scale = {
+            1: DW_table_L,
+            2: DW_table_U,
+            3: 4 - DW_table_U,
+            4: 4 - DW_table_L,
+            5: 4}
+        
+        Durbin_Watson_comparison = {
+            1: ['0 ≤ DW_calc < DW_table_L',                   'H1: r > 0'],
+            2: ['DW_table_L ≤ DW_calc ≤ DW_table_U',          'uncertainty'],
+            3: ['DW_table_U < DW_calc < 4 - DW_table_U',      'H0: r = 0'],
+            4: ['4 - DW_table_U ≤ DW_calc ≤ 4 - DW_table_L',  'uncertainty'],
+            5: ['4 - DW_table_L < DW_calc ≤ 4',               'H1: r < 0']}
+        
+        r_scale = list(Durbin_Watson_scale.values())
+        for i, elem in enumerate(r_scale):
+            if DW_calc <= elem:
+                key_scale = list(Durbin_Watson_scale.keys())[i]
+                comparison = Durbin_Watson_comparison[key_scale][0]
+                conclusion = Durbin_Watson_comparison[key_scale][1]
+                break
+           
+    elif n < 15:        
+        comparison = '-'
+        conclusion = 'count less than 15'
+    else:
+        comparison = '-'
+        conclusion = 'count more than 100'
+    
+    
+    # формируем результат            
+    result = pd.DataFrame({
+        'n': (n),
+        'm': (m),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'DW_calc': (DW_calc),
+        'ρ': (1 - DW_calc/2),
+        'DW_table_L': (DW_table_L if (n >= 15) and (n <= 100) else '-'),
+        'DW_table_U': (DW_table_U if (n >= 15) and (n <= 100) else '-'),
+        'comparison of calculated and critical values': (comparison),
+        'conclusion': (conclusion)
+        },
+        index=['Durbin-Watson_test'])
+    
+    
+    return result
+
+
+
 #------------------------------------------------------------------------------
 #   Функция regression_pair_predict
 #------------------------------------------------------------------------------
@@ -2458,7 +2839,9 @@ def regression_pair_predict(
     Y = model_fit.model.endog
     
     # вспомогательные величины
-    n = int(result_linear_ols.nobs)
+    n = int(model_fit.nobs)
+    p = int(model_fit.df_model)
+    
     SSE = model_fit.ssr    # SSE (Sum of Squared Error)
     dfE = n - p - 1
     MSE = SSE / dfE    # остаточная дисперсия
