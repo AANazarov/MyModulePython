@@ -171,6 +171,7 @@ def transformation_to_category(df_in, max_unique_count=150, cols_to_exclude=None
 def df_detection_values(
     df_in,
     detection_values=[nan],
+    color_highlight = 'yellow',
     graph_size=(210/INCH, 297/INCH/2)):
     
     cols = df_in.columns
@@ -187,7 +188,7 @@ def df_detection_values(
     fig, axes = plt.subplots(figsize=graph_size)
     sns.heatmap(
         detection_values_df,
-        cmap=sns.color_palette(['grey', 'yellow']),
+        cmap=sns.color_palette(['grey', color_highlight]),
         cbar=False,
         ax=axes)
     plt.show()
@@ -530,6 +531,150 @@ def Abbe_test(X, p_level=0.95):
     
     return result
 
+
+
+#------------------------------------------------------------------------------
+#   Функция Cox_Stuart_test
+#   Проверяет гипотезу о случайности значений ряда по критерию Кокса-Стюарта
+#------------------------------------------------------------------------------
+
+def Cox_Stuart_test(data, p_level=0.95):
+    a_level = 1 - p_level
+    data = np.array(data)
+    N = len(data)
+    
+    # функция, выполняющая процедуру расчета теста Кокса-Стюарта
+    def calculate_test(X):
+        n = len(X)
+        # расчетное значение статистики критерия (тренд средних)
+        h = lambda i, j: 1 if X[i] > X[j] else 0
+        S = np.sum([(n-2*i+1) * h(i-1, (n-i+1)-1) for i in range(1, n//2 + 1)])
+        MS = (n**2)/8
+        DS = n*(n**2 - 1) / 24
+        S_calc = abs(S - MS) / sqrt(DS)
+        # табличное значение статистики критерия (тренд средних)
+        S_table = sps.norm.ppf((1+p_level)/2, 0, 1)
+        # результат
+        return S_calc, S_table
+    
+    # ПРОВЕРКА ГИПОТЕЗЫ О НАЛИЧИИ ТРЕНДА В СРЕДНЕМ
+    (S1_calc, S1_table) = calculate_test(data)
+    conclusion_mean = 'independent observations' if S1_calc < S1_table else 'dependent observations'    
+    
+    # ПРОВЕРКА ГИПОТЕЗЫ О НАЛИЧИИ ТРЕНДА В ДИСПЕРСИИ
+    # задаем шкалу для объема подвыборок
+    k_scale = [
+        [48, 2],
+        [64, 3],
+        [90, 4]]
+    # определяем объем подвыборки
+    for i, elem in enumerate(k_scale):
+        if N < elem[0]:
+            K = elem[1]
+            break
+        else:
+            K = 5
+    #print(f'N = {N}')
+    #print(f'K = {K}')
+    # определяем число подвыборок
+    R = N//K
+    #print(f'R = {R}')
+    # формируем подвыборки
+    Subsampling = np.zeros((R, K))
+    if not R % 2:    # четное число подвыборок
+        R_2 = int(R/2)
+        for i in range(R_2):
+            Subsampling[i] = [data[i*K + j] for j in range(0, K, 1)]
+            Subsampling[R - 1 - i] = [data[N - (i*K + j)] for j in range(K, 0, -1)]
+    else:    # нечетное число подвыборок
+        R_2 = int((R)/2)+1
+        for i in range(R_2):
+            Subsampling[i] = [data[i*K + j] for j in range(0, K, 1)]
+            Subsampling[R - 1 - i] = [data[N - (i*K + j)] for j in range(K, 0, -1)]
+    #print(f'Subsampling = \n{Subsampling}\n')
+    # проверка гипотезы
+    W = [np.amax(Subsampling[i]) - np.amin(Subsampling[i]) for i in range(R)]    # размахи подвыборок
+    #print(f'W = {W}')
+    (S2_calc, S2_table) = calculate_test(W)
+    conclusion_variance = 'independent observations' if S2_calc < S2_table else 'dependent observations'    
+    
+    # формируем результат            
+    result = pd.DataFrame({
+        'n': (N),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'S_calc': (S1_calc, S2_calc),
+        'S_table': (S1_table, S2_table),
+        'S_calc < S_table': (S1_calc < S1_table, S2_calc < S2_table),
+        'conclusion': (conclusion_mean, conclusion_variance)
+        },
+        index=['Cox_Stuart_test (trend in means)', 'Cox_Stuart_test (trend in variances)'])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Foster_Stuart_test
+#   Проверяет гипотезу о случайности значений ряда по критерию Фостера-Стюарта
+#------------------------------------------------------------------------------
+
+def Foster_Stuart_test(X, p_level=0.95):
+    a_level = 1 - p_level
+    X = np.array(X)
+    n = len(X)
+        
+    # расчетные значения статистики критерия
+    u = l = list()
+    Xtemp = np.array(X[0])
+    for i in range(1, n):
+        Xmax = np.max(Xtemp)
+        Xmin = np.min(Xtemp)
+        u = np.append(u, 1 if X[i] > Xmax else 0)
+        l = np.append(l, 1 if X[i] < Xmin else 0)
+        Xtemp = np.append(Xtemp, X[i])
+                
+    d = np.int64(np.sum(u - l))
+    S = np.int64(np.sum(u + l))
+        
+    # нормализованные расчетные значения статистики критерия
+    mean_d = 0
+    mean_S = 2*np.sum([1/i for i in range(2, n+1)])
+    std_d = sqrt(mean_S)
+    std_S = sqrt(mean_S - 4*np.sum([1/i**2 for i in range(2, n+1)]))
+    
+    '''print(f'mean_d = {mean_d}')
+    print(f'std_d = {std_d}')
+    print(f'mean_S = {mean_S}')
+    print(f'std_S = {std_S}')'''
+    
+    t_d = (d - mean_d)/std_d
+    t_S = (S - mean_S)/std_S
+    
+    # табличные значения статистики критерия    
+    df = n
+    t_table = sci.stats.t.ppf((1 + p_level)/2 , df)
+    
+    # проверка гипотезы
+    conclusion_d = 'independent observations' if t_d <= t_table else 'dependent observations'
+    conclusion_S = 'independent observations' if t_S <= t_table else 'dependent observations'
+    
+    # формируем результат            
+    result = pd.DataFrame({
+        'n': (n),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'notation': ('d', 'S'),
+        'statistic': (d, S),
+        'normalized_statistic': (t_d, t_S),
+        'crit_value': (t_table),
+        'normalized_statistic ≤ crit_value': (t_d <= t_table, t_S <= t_table),
+        'conclusion': (conclusion_d, conclusion_S)
+        },
+        index=['Foster_Stuart_test (trend in means)', 'Foster_Stuart_test (trend in variances)'])
+    
+    return result
+
     
 
 #==============================================================================
@@ -650,7 +795,7 @@ def graph_plot_mpl_np(
 #   Функция graph_scatterplot_sns_np
 #------------------------------------------------------------------------------
 
-def graph_plot_sns_np(
+def graph_lineplot_sns(
     X, Y,
     Xmin_in=None, Xmax_in=None,
     Ymin_in=None, Ymax_in=None,
@@ -1620,6 +1765,429 @@ def graph_regression_plot_sns(
 
 
 
+
+#==============================================================================
+#               ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ ТАБЛИЦ СОПРЯЖЕННОСТИ
+#==============================================================================  
+
+#------------------------------------------------------------------------------
+#   Функция conjugacy_table_2x2_coefficient
+#------------------------------------------------------------------------------
+
+def conjugacy_table_2x2_independence_check (X, p_level=0.95):
+    a_level = 1 - p_level
+    data = np.array(X)
+    a = data[0][0]
+    b = data[0][1]
+    c = data[1][0]
+    d = data[1][1]
+    n = a + b + c + d
+    
+    u_p = sps.norm.ppf((1 + p_level)/2, 0, 1)    # табл.значение квантиля норм.распр.
+    #print(u_p)
+    
+       
+    # Коэффициент ассоциации Юла
+    Q_calc = (a*d - b*c) / (a*d + b*c)    # расчетное значение коэффициента
+    DQ = 1/4 * (1-Q_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
+    Q_crit = u_p * sqrt(DQ)    # критическое значение коэффициента
+    conclusion_Q = 'significant' if abs(Q_calc) >= Q_crit else 'not significant'        
+    
+    # Коэффициент коллигации Юла
+    Y_calc = (sqrt(a*d) - sqrt(b*c)) / (sqrt(a*d) + sqrt(b*c))   # расчетное значение коэффициента
+    DY = 1/16 * (1-Y_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
+    Y_crit = u_p * sqrt(DY)    # критическое значение коэффициента
+    conclusion_Y = 'significant' if abs(Y_calc) >= Y_crit else 'not significant'
+    
+    # Коэффициент контингенции Пирсона
+    V_calc = (a*d - b*c) / sqrt((a + b)*(a + c)*(b + d)*(c + d))   # расчетное значение коэффициента
+    DV = 1/n * (1-V_calc**2) + \
+        1/n * (V_calc + 1/2 * V_calc**2) * ((a-d)**2 - (b-c)**2)/sqrt((a+b)*(a+c)*(b+d)*(c+d)) - \
+            3/(4*n)*V_calc**2 * (((a+b-c-d)**2 / ((a+b)*(c+d))) - ((a+c-b-d)**2 / ((a+c)*(b+d))))    # дисперсия
+    V_crit = u_p * sqrt(DV)    # критическое значение коэффициента
+    conclusion_V = 'significant' if abs(V_calc) >= V_crit else 'not significant'
+    
+    # градация значений коэффициентов
+    # шкала Эванса 1996 г. для психосоциальных исследований (https://medradiol.fmbafmbc.ru/journal_medradiol/abstracts/2019/6/12-24_Koterov_et_al.pdf)
+    #strength of relationship
+    check_Evans_scale = lambda r, measure_of_association: '-' if measure_of_association == 'not significant' else\
+        'very weak' if abs(r) < 0.2 else \
+            'weak' if abs(r) < 0.4 else \
+                'moderate' if abs(r) < 0.6 else \
+                    'strong' if abs(r) < 0.8 else \
+                        'very strong'
+    
+    # Создадим DataFrame для сводки результатов
+    coefficient = np.array([Q_calc, Y_calc, V_calc])
+    critical_value = (Q_crit, Y_crit, V_crit)
+    measure_of_association = (conclusion_Q, conclusion_Y, conclusion_V)
+    strength_of_relationship = np.vectorize(check_Evans_scale)(coefficient, measure_of_association)
+    
+    func_of_measure = lambda value, measure_of_association: value if measure_of_association == 'significant' else '-'
+    confidence_interval_min = func_of_measure(coefficient - critical_value, measure_of_association)
+    confidence_interval_max = func_of_measure(coefficient + critical_value, measure_of_association)
+                
+    result = pd.DataFrame({
+        'test': (
+            'Yule’s Coefficient of Association (Q)',
+            'Yule’s Coefficient of Colligation (Y)',
+            "Pearson's contingency coefficient (V)"),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'coefficient': coefficient,
+        'critical_value': critical_value,
+        '|coefficient| >= critical_value': (abs(coefficient) >= critical_value),
+        'measure of association': (measure_of_association),
+        'strength of relationship (Evans scale)': (strength_of_relationship),
+        'confidence interval min': (confidence_interval_min),
+        'confidence interval max': (confidence_interval_max)
+        })
+    return result
+
+ 
+
+#------------------------------------------------------------------------------
+#   Функция conjugacy_table_IxJ_independence_check
+#------------------------------------------------------------------------------
+
+def conjugacy_table_IxJ_independence_check (X_in, p_level=0.95):
+    a_level = 1 - p_level
+    X = np.array(X_in)
+    #print(X, '\n')
+    result = []
+    
+    # параметры таблицы сопряженности
+    N_rows = X.shape[0]
+    N_cols = X.shape[1]
+    N = X.size
+    X_sum = np.sum(X)
+    
+    # проверка условия размерности таблицы 2х2
+    check_condition_2x2 = True if (N_rows == 2 and N_cols == 2) else False
+        
+    # проверка условий применимости критерия хи-квадрат
+    check_condition_chi2_1 = check_condition_chi2_2 = True
+    note_condition_chi2_1 = note_condition_chi2_2 = ''
+        
+    if X_sum < 50:
+        check_condition_chi2_1 = False
+        note_condition_chi2_1 = 'sample size less than 50'
+                    
+    if check_condition_2x2:
+        if np.size(np.where(X.ravel() < 5)):    # Функция np.ravel() преобразует матрицу в одномерный вектор
+            check_condition_chi2_2 = False
+            note_condition_chi2_2 = 'frequency less than 5'
+    else:
+        if np.size(np.where(X.ravel() < 3)):
+            check_condition_chi2_2 = False
+            note_condition_chi2_2 = 'frequency less than 3'
+    
+    # ожидаемые частоты и предельные суммы
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.expected_freq.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.margins.html
+    
+    
+    # критерий хи-квадрат (без поправки Йетса)
+    # https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
+    s_calc_chi2 = '-'
+    critical_value_chi2 = '-'
+    significance_check_chi2_s = '-'
+    a_calc_chi2 = '-'
+    significance_check_chi2_a = '-'
+    
+    if check_condition_chi2_1 and check_condition_chi2_2:
+        (s_calc_chi2, p_chi2, dof_chi2, ex_chi2) = sci.stats.chi2_contingency(X, correction=False)
+        critical_value_chi2 = sci.stats.chi2.ppf(p_level, dof_chi2)
+        significance_check_chi2_s = s_calc_chi2 >= critical_value_chi2
+        a_calc_chi2 = p_chi2
+        # альтернативный расчет: a_calc_chi2 = 1 - sci.stats.chi2.cdf(s_calc_chi2, dof_chi2)
+        significance_check_chi2_a = a_calc_chi2 <= a_level
+        conclusion_chi2 = 'categories are not independent' if significance_check_chi2_s else 'categories are independent'
+    else:
+        conclusion_chi2 = note_condition_chi2_1 + ' ' + note_condition_chi2_2
+        
+    # критерий хи-квадрат (с поправкой Йетса) (только для таблиц 2х2)
+    # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
+    # https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0_%D0%99%D0%B5%D0%B9%D1%82%D1%81%D0%B0
+    s_calc_chi2_Yates = '-'
+    critical_value_chi2_Yates = '-'
+    significance_check_chi2_s_Yates = '-'
+    a_calc_chi2_Yates = '-'
+    significance_check_chi2_a_Yates = '-'
+    
+    if check_condition_2x2:
+        if check_condition_chi2_1 and check_condition_chi2_2:
+            (s_calc_chi2_Yates, p_chi2_Yates, dof_chi2_Yates, ex_chi2_Yates) = sci.stats.chi2_contingency(X, correction=True)
+            critical_value_chi2_Yates = sci.stats.chi2.ppf(p_level, dof_chi2_Yates)
+            significance_check_chi2_s_Yates = s_calc_chi2_Yates >= critical_value_chi2_Yates
+            a_calc_chi2_Yates = p_chi2_Yates
+            significance_check_chi2_a_Yates = a_calc_chi2_Yates <= a_level
+            conclusion_chi2_Yates = 'categories are not independent' if significance_check_chi2_s_Yates else 'categories are independent'
+        else:
+            conclusion_chi2_Yates = note_condition_chi2_1 + '   ' + note_condition_chi2_2                
+    else:
+        conclusion_chi2_Yates = 'not 2x2'
+            
+    # относительный риск
+    # https://medstatistic.ru/methods/methods7.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.relative_risk.html#r092af754ff7d-1
+    
+    # точный критерий Фишера (Fisher's exact test) (односторонний)
+    # https://en.wikipedia.org/wiki/Fisher's_exact_test
+    # https://ru.wikipedia.org/wiki/%D0%A2%D0%BE%D1%87%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D1%81%D1%82_%D0%A4%D0%B8%D1%88%D0%B5%D1%80%D0%B0
+    # https://medstatistic.ru/methods/methods5.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fisher_exact.html
+        
+    # точный критерий Фишера (Fisher's exact test) (двусторонний)
+    p_Fisher_two_sided = '-'
+    significance_check_Fisher_two_sided = '-'
+    a_calc_Fisher_two_sided = '-'
+    significance_check_Fisher_two_sided = '-'
+    conclusion_Fisher_two_sided = '-'
+    
+    if check_condition_2x2:
+        (oddsr_Fisher_two_sided, p_Fisher_two_sided) = sci.stats.fisher_exact(X, alternative='two-sided')
+        a_calc_Fisher_two_sided = p_Fisher_two_sided
+        significance_check_Fisher_two_sided = a_calc_Fisher_two_sided <= a_level
+        conclusion_Fisher_two_sided = 'categories are not independent' if significance_check_Fisher_two_sided else 'categories are independent'
+    else:
+        conclusion_Fisher_two_sided = 'not 2x2'
+            
+    # отношение шансов (odds ratio)
+    # https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D0%BD%D0%BE%D1%88%D0%B5%D0%BD%D0%B8%D0%B5_%D1%88%D0%B0%D0%BD%D1%81%D0%BE%D0%B2
+    odds_ratio_calc = '-'
+    significance_check_odds_ratio = '-'
+    a_calc_odds_ratio = '-'
+    significance_check_odds_ratio = '-'
+    conclusion_odds_ratio = '-'
+    
+    if check_condition_2x2:
+        odds_ratio_calc = oddsr_Fisher_two_sided
+    else:
+        conclusion_odds_ratio = 'not 2x2'
+        
+    # тест Барнарда 
+    # https://en.wikipedia.org/wiki/Barnard's_test
+    # https://wikidea.ru/wiki/Barnard%27s_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.barnard_exact.html
+    s_calc_Barnard = '-'
+    critical_value_Barnard = '-'
+    significance_check_Barnard = '-'
+    a_calc_Barnard = '-'
+    significance_check_Barnard = '-'
+    
+    if check_condition_2x2:
+        res = sci.stats.barnard_exact(X, alternative='two-sided')
+        s_calc_Barnard = res.statistic
+        a_calc_Barnard = res.pvalue
+        significance_check_Barnard = a_calc_Barnard <= a_level
+        conclusion_Barnard = 'categories are not independent' if significance_check_Barnard else 'categories are independent'
+    else:
+        conclusion_Barnard = 'not 2x2'
+        
+    # тест Бошлу 
+    # https://en.wikipedia.org/wiki/Boschloo%27s_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.boschloo_exact.html
+    s_calc_Boschloo = '-'
+    critical_value_Boschloo = '-'
+    significance_check_Boschloo = '-'
+    a_calc_Boschloo = '-'
+    significance_check_Boschloo = '-'
+    
+    if check_condition_2x2:
+        res = sci.stats.boschloo_exact(X, alternative='two-sided')
+        s_calc_Boschloo = res.statistic
+        a_calc_Boschloo = res.pvalue
+        significance_check_Boschloo = a_calc_Boschloo <= a_level
+        conclusion_Boschloo = 'categories are not independent' if significance_check_Boschloo else 'categories are independent'
+    else:
+        conclusion_Boschloo = 'not 2x2'        
+
+    # заполним DataFrame для сводки результатов
+    result = pd.DataFrame({
+        'test': (
+            'Chi-squared test',
+            "Chi-squared test (with Yates's correction for 2x2)",
+            "Fisher's exact test (two-sided)",
+            "Odds ratio",
+            "Barnard's exact test",
+            "Boschloo's exact test"),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'statistic': [s_calc_chi2, s_calc_chi2_Yates, '-', odds_ratio_calc, s_calc_Barnard, s_calc_Boschloo],
+        'critical_value': [
+            critical_value_chi2, 
+            critical_value_chi2_Yates, 
+            '-', '', 
+            critical_value_Barnard, 
+            critical_value_Boschloo],
+        'statistic >= critical_value': [
+            significance_check_chi2_s,
+            significance_check_chi2_s_Yates,
+            '-', '',
+            s_calc_Barnard,
+            s_calc_Boschloo],
+        'a_calc': [a_calc_chi2, a_calc_chi2_Yates, a_calc_Fisher_two_sided, '', a_calc_Barnard, a_calc_Boschloo],
+        'a_calc <= a_level': [
+            significance_check_chi2_a,
+            significance_check_chi2_a_Yates,
+            significance_check_Fisher_two_sided,
+            '', 
+            significance_check_Barnard, 
+            significance_check_Boschloo],
+        'conclusion': [
+            conclusion_chi2,
+            conclusion_chi2_Yates,
+            conclusion_Fisher_two_sided,
+            '',
+            conclusion_Barnard,
+            conclusion_Boschloo]
+        })
+
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_contingency_tables_bar_pd
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_bar_pd(
+    data_pd,
+    A_name = None, B_name = None, 
+    graph_size=(210/INCH, 297/INCH/2),
+    part_table=1/5,    # часть графика, выделяемая под таблицу с данными
+    title_figure=None, title_figure_fontsize=16,
+    file_name=None):
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size, constrained_layout=True)
+    n_rows = int(1/part_table)
+    gs = mpl.gridspec.GridSpec(nrows=n_rows, ncols=2, figure=fig)
+    ax1_1 = fig.add_subplot(gs[0:n_rows-1, 0:1])
+    ax1_2 = fig.add_subplot(gs[n_rows-1, 0:1])
+    ax2_1 = fig.add_subplot(gs[0:n_rows-1, 1:])
+    ax2_2 = fig.add_subplot(gs[n_rows-1, 1:])
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    ax1_1.set_title('Absolute values', fontsize=14)
+    ax2_1.set_title('Relative values', fontsize=14)
+    
+    # столбчатая диаграмма с абсолютными значениями
+    data_pd.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        ax=ax1_1)
+    ax1_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    ax1_2.set_axis_off()
+    table_1 = ax1_2.table(
+        cellText=np.fliplr(np.array(data_pd)).T,
+        rowLabels=data_pd.columns,
+        #colLabels=df.index[0:3],
+        cellLoc='center',
+        loc='center')
+    table_1.set_fontsize(12)
+    table_1.scale(1, 3)
+    
+    # столбчатая диаграмма с относительными значениями
+    data_relative = data_pd.copy()
+    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+
+    data_relative.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        color=['lightblue', 'wheat'],
+        ax=ax2_1)
+    ax2_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    ax2_2.set_axis_off()
+    table_2 = ax2_2.table(
+        cellText=np.fliplr(np.array(data_relative)).T,
+        rowLabels=data_relative.columns,
+        #colLabels=df.index[0:3],
+        cellLoc='center',
+        loc='center')
+    table_2.set_fontsize(12)
+    table_2.scale(1, 3)
+    
+    fig.tight_layout()
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_contingency_tables_freqint_pd
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_bar_freqint_pd(
+    data_pd,
+    A_name = None, B_name = None, 
+    graph_size=(297/INCH, 210/INCH/1.5),
+    title_figure=None, title_figure_fontsize=16,
+    file_name=None):
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size, constrained_layout=True)
+    ax1 = plt.subplot(1,3,1)
+    ax2 = plt.subplot(1,3,2)
+    ax3 = plt.subplot(1,3,3)
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    ax2.set_title('Relative values', fontsize=14)
+    
+    # столбчатая диаграмма с абсолютными значениями
+    data_pd.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        ax=ax1)
+    ax1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    ax1.set_title('Absolute values', fontsize=14)
+    
+    # столбчатая диаграмма с относительными значениями
+    data_relative = data_pd.copy()
+    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+
+    data_relative.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        color=['lightblue', 'wheat'],
+        ax=ax2)
+    ax2.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    # график взаимодействия частот
+    sns.lineplot(
+        data=data_pd,
+        dashes=False,
+        lw=3,
+        markers=['o','o'],
+        markersize=10,
+        ax=ax3)
+    ax3.set_title('Graph of frequency interactions', fontsize=14)
+    ax3.set_xticks(list(data_pd.index))
+        
+    fig.tight_layout()
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
 #==============================================================================
 #               ФУНКЦИИ ДЛЯ ВЫЯВЛЕНИЯ АНОМАЛЬНЫХ ЗНАЧЕНИЙ (ВЫБРОСОВ)
 #==============================================================================    
@@ -1704,7 +2272,7 @@ def norm_distr_check (data, p_level=0.95):
         s_calc_EP = 1 + N / sqrt(3) + B - A
         # табличное значение статистики критерия
         Tep_table_df = pd.read_csv(
-            filepath_or_buffer='table/Tep_table.csv',
+            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
             sep=';',
             index_col='n')
         p_level_dict = {
@@ -1963,7 +2531,7 @@ def Epps_Pulley_test(data, p_level=0.95):
         s_calc_EP = 1 + N / sqrt(3) + B - A
         # табличное значение статистики критерия
         Tep_table_df = pd.read_csv(
-            filepath_or_buffer='table/Tep_table.csv',
+            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
             sep=';',
             index_col='n')
         p_level_dict = {
@@ -2882,7 +3450,7 @@ def graph_regression_pair_predict_plot_sns(
     y_label=None,
     label_fontsize=14, tick_fontsize=12, 
     label_legend_regr_model='', label_legend_fontsize=12,
-    s=50, linewidth_regr_model=2,
+    s=50,
     graph_size=(297/INCH, 210/INCH),
     result_output=True,
     file_name=None):
@@ -2933,7 +3501,7 @@ def graph_regression_pair_predict_plot_sns(
     sns.lineplot(
         x=Xcalc, y=Ycalc,
         color='blue',
-        linewidth=linewidth_regr_model,
+        linewidth=2,
         legend=True,
         label=label_legend_regr_model,
         ax=axes)
