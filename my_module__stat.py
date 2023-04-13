@@ -792,7 +792,7 @@ def graph_plot_mpl_np(
 
     
 #------------------------------------------------------------------------------
-#   Функция graph_scatterplot_sns_np
+#   Функция graph_lineplot_sns_np
 #------------------------------------------------------------------------------
 
 def graph_lineplot_sns(
@@ -1115,11 +1115,11 @@ def graph_hist_boxplot_probplot_sns(
         xmax = max(np.histogram(X, bins=bins_hist, density=density_hist)[0])
         ax1.set_ylim(0, xmax*1.4)
         if density_hist:
-            label_hist = "эмпирическая плотность распределения"
-            ax1.set_ylabel('Относительная плотность', fontsize = label_fontsize)
+            label_hist = "empirical density of distribution"
+            ax1.set_ylabel('Relative density', fontsize = label_fontsize)
         else:
-            label_hist = "эмпирическая частота"
-            ax1.set_ylabel('Абсолютная частота', fontsize = label_fontsize)
+            label_hist = "empirical frequency"
+            ax1.set_ylabel('Absolute frequency', fontsize = label_fontsize)
         # рендеринг графика
         if density_hist:
             ax1.hist(
@@ -1135,7 +1135,7 @@ def graph_hist_boxplot_probplot_sns(
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
         else:
             ax1.hist(
                 X,
@@ -1150,15 +1150,15 @@ def graph_hist_boxplot_probplot_sns(
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
         ax1.axvline(
             X_mean,
-            color='magenta', label = 'среднее значение', linewidth = 2)
+            color='magenta', label = 'mean', linewidth = 2)
         ax1.axvline(
             np.median(X),
-            color='orange', label = 'медиана', linewidth = 2)
+            color='orange', label = 'median', linewidth = 2)
         ax1.axvline(stat.mode(X),
-            color='cyan', label = 'мода', linewidth = 2)
+            color='cyan', label = 'mode', linewidth = 2)
         ax1.set_xlim(Xmin, Xmax)
         ax1.legend(fontsize = label_legend_fontsize)
         ax1.tick_params(labelsize = tick_fontsize)
@@ -1202,7 +1202,7 @@ def graph_hist_boxplot_probplot_sns(
                 ax = ax1 if (graph_inclusion == 'p') else ax3 if (graph_inclusion == 'hbp') else ax2)
             boxplot_xlabel = 'Theoretical quantilies'
             boxplot_ylabel = 'Sample quantilies'
-        boxplot_legend = ['эмпирические данные', 'нормальное распределение']
+        boxplot_legend = ['data', 'normal distribution']
         if (graph_inclusion == 'p'):
             ax1.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax1.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
@@ -1666,7 +1666,7 @@ def graph_regression_plot_sns(
         ax1.set_title(title_axes, fontsize = title_axes_fontsize)
         sns.scatterplot(
             x=X, y=Y,
-            label='фактические данные',
+            label='data',
             s=s,
             color='red',
             ax=ax1)
@@ -1693,7 +1693,7 @@ def graph_regression_plot_sns(
         ax1.legend(prop={'size': label_legend_fontsize})
         
         # график остатков
-        ax2.set_title('График остатков', fontsize = title_axes_fontsize)
+        ax2.set_title('Residuals', fontsize = title_axes_fontsize)
         ax2.set_xlim(Xmin, Xmax)
         #ax2.set_ylim(Ymin, Ymax)
         sns.scatterplot(
@@ -1776,7 +1776,7 @@ def graph_regression_plot_sns(
 
 def conjugacy_table_2x2_independence_check (X, p_level=0.95):
     a_level = 1 - p_level
-    data = np.array(X)
+    data = np.array(X)  
     a = data[0][0]
     b = data[0][1]
     c = data[1][0]
@@ -2394,8 +2394,7 @@ def norm_distr_check (data, p_level=0.95):
         a_calc_Es = '-'
         conclusion_Es = 'count less than 20'
     
-    # Создадим DataFrame для сводки результатов
-    #------------------------------------------
+    # Создадим DataFrame для сводки результатов    
     result = pd.DataFrame({
     'test': (
         'Shapiro-Wilk test',
@@ -2623,6 +2622,29 @@ def Evans_scale_check(r, name='r'):
             conclusion_Evans_scale = list(Evans_scale.keys())[i]
             break
     return conclusion_Evans_scale  
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Rea_Parker_scale_check
+#------------------------------------------------------------------------------
+
+def Rea_Parker_scale_check(r, name='r'):
+    # задаем шкалу Rea_Parker
+    Rea_Parker_scale = {
+        f'unessential (|{name}| < 0.1)':                  0.1,
+        f'weak (0.1 <= |{name}| < 0.2)':                  0.2,  
+        f'middle (0.2 <= |{name}| < 0.4)':                0.4,
+        f'relatively strong (0.4 <= |{name}| < 0.6)':     0.6,
+        f'strong (0.6 <= |{name}| < 0.8)':                0.8,
+        f'very strong (0.8 <= |{name}| <= 1.0)':          1.0}
+    
+    r_scale = list(Rea_Parker_scale.values())
+    for i, elem in enumerate(r_scale):
+        if abs(r) <= elem:
+            conclusion_Rea_Parker_scale = list(Rea_Parker_scale.keys())[i]
+            break
+    return conclusion_Rea_Parker_scale
 
 
 
@@ -2947,35 +2969,55 @@ def regression_error_metrics(model=None, Yfact=None, Ycalc=None, model_name=''):
         n_fit = model_fit.nobs
         Yfact = model.endog
         
-        MSE = (1/n_fit) * np.sum((Yfact-Ycalc)**2)
+        Y_mean = np.mean(Yfact)
+        SSR = np.sum((Ycalc - Y_mean)**2)
+        SSE = np.sum((Yfact - Ycalc)**2)
+        SST = np.sum((Yfact - Y_mean)**2)
+        
+        MSE = (1/n_fit) * SSE
         RMSE = sqrt(MSE)
         MAE = (1/n_fit) * np.sum(abs(Yfact-Ycalc))
-        MSPE = (1/n_fit) *  np.sum(((Yfact-Ycalc)/Yfact)**2)
-        MAPE = (1/n_fit) *  np.sum(abs((Yfact-Ycalc)/Yfact))
+        MSPE = (1/n_fit) * np.sum(((Yfact-Ycalc)/Yfact)**2)
+        MAPE = (1/n_fit) * np.sum(abs((Yfact-Ycalc)/Yfact))
+        RMSLE = sqrt((1/n_fit) * np.sum((np.log(Yfact + 1)-np.log(Ycalc + 1))**2))
+        R2 = 1 - SSE/SST
+        
     
     else:
         Yfact = np.array(Yfact)
         Ycalc = np.array(Ycalc)
         n_fit = len(Yfact)
-        MSE = (1/n_fit) * np.sum((Yfact-Ycalc)**2)
+        
+        Y_mean = np.mean(Yfact)
+        SSR = np.sum((Ycalc - Y_mean)**2)
+        SSE = np.sum((Yfact - Ycalc)**2)
+        SST = np.sum((Yfact - Y_mean)**2)
+        
+        MSE = (1/n_fit) * SSE
         RMSE = sqrt(MSE)
         MAE = (1/n_fit) * np.sum(abs(Yfact-Ycalc))
         MSPE = (1/n_fit) *  np.sum(((Yfact-Ycalc)/Yfact)**2)
         MAPE = (1/n_fit) *  np.sum(abs((Yfact-Ycalc)/Yfact))        
+        RMSLE = sqrt((1/n_fit) * np.sum((np.log(Yfact + 1)-np.log(Ycalc + 1))**2))
+        R2 = 1 - SSE/SST
     
     model_error_metrics = {
         'MSE': MSE,
         'RMSE': RMSE,
         'MAE': MAE,
         'MSPE': MSPE,
-        'MAPE': MAPE}
+        'MAPE': MAPE,
+        'RMSLE': RMSLE,
+        'R2': R2}
     
     result = pd.DataFrame({
         'MSE': MSE,
         'RMSE': RMSE,
         'MAE': MAE,
         'MSPE': "{:.3%}".format(MSPE),
-        'MAPE': "{:.3%}".format(MAPE)},
+        'MAPE': "{:.3%}".format(MAPE),
+        'RMSLE': RMSLE,
+        'R2': R2},
         index=[model_name])        
         
     return model_error_metrics, result
@@ -3492,7 +3534,7 @@ def graph_regression_pair_predict_plot_sns(
     # фактические данные
     sns.scatterplot(
         x=X, y=Y,
-        label='фактические данные',
+        label='data',
         s=s,
         color='red',
         ax=axes)
@@ -3511,7 +3553,7 @@ def graph_regression_pair_predict_plot_sns(
     plt.plot(
         result_df['x_calc'], Mean_ci_low,
         color='magenta', linestyle='--', linewidth=1,
-        label='доверительный интервал средних значений Y')
+        label='confidence interval of mean values Y')
     
     Mean_ci_upp = result_df['y_calc_mean_ci_upp']
     plt.plot(
@@ -3523,7 +3565,7 @@ def graph_regression_pair_predict_plot_sns(
     plt.plot(
         result_df['x_calc'], Predict_ci_low,
         color='orange', linestyle='-.', linewidth=2,
-        label='доверительный интервал индивидуальных значений Y')
+        label='confidence interval of individual values Y')
     
     Predict_ci_upp = result_df['y_calc_predict_ci_upp']
     plt.plot(
@@ -3547,5 +3589,314 @@ def graph_regression_pair_predict_plot_sns(
         return result_df
     else:
         return
+
+
+#------------------------------------------------------------------------------
+#   Функция simple_approximation
+#------------------------------------------------------------------------------
+
+def simple_approximation(
+    X_in, Y_in,
+    models_list_in,
+    p0_dict_in=None,
+    Xmin=None, Xmax=None,
+    Ymin=None, Ymax=None,
+    nx_in=100,
+    DecPlace=4,
+    result_table=False, value_table_calc=False, value_table_graph=False,
+    title_figure=None, title_figure_fontsize=16,
+    title_axes=None, title_axes_fontsize=18,
+    x_label=None, y_label=None,
+    linewidth=2,
+    label_fontsize=14, tick_fontsize=12, label_legend_fontsize=12,
+    color_list_in=None,
+    b0_formatter=None, b1_formatter=None, b2_formatter=None, b3_formatter=None,
+    graph_size=(420/INCH, 297/INCH),
+    file_name=None):
+    
+    # Equations
+    linear_func = lambda x, b0, b1: b0 + b1*x
+    quadratic_func = lambda x, b0, b1, b2: b0 + b1*x + b2*x**2
+    qubic_func = lambda x, b0, b1, b2, b3: b0 + b1*x + b2*x**2 + b3*x**3
+    power_func = lambda x, b0, b1: b0 * x**b1
+    exponential_func = lambda x, b0, b1: b0 * np.exp(b1*x)
+    logarithmic_func = lambda x, b0, b1: b0 + b1*np.log(x)
+    hyperbolic_func = lambda x, b0, b1: b0 + b1/x
+    
+    # Model reference
+    p0_dict = {
+        'linear':      [1, 1],
+        'quadratic':   [1, 1, 1],
+        'qubic':       [1, 1, 1, 1],
+        'power':       [1, 1],
+        'exponential': [1, 1],
+        'logarithmic': [1, 1],
+        'hyperbolic':  [1, 1]}
+    
+    models_dict = {
+        'linear':      [linear_func,      p0_dict['linear']],
+        'quadratic':   [quadratic_func,   p0_dict['quadratic']],
+        'qubic':       [qubic_func,       p0_dict['qubic']],
+        'power':       [power_func,       p0_dict['power']],
+        'exponential': [exponential_func, p0_dict['exponential']],
+        'logarithmic': [logarithmic_func, p0_dict['logarithmic']],
+        'hyperbolic':  [hyperbolic_func,  p0_dict['hyperbolic']]}
+    
+    models_df = pd.DataFrame({
+        'func': (
+            linear_func,
+            quadratic_func,
+            qubic_func,
+            power_func,
+            exponential_func,
+            logarithmic_func,
+            hyperbolic_func),
+        'p0': (
+            p0_dict['linear'],
+            p0_dict['quadratic'],
+            p0_dict['qubic'],
+            p0_dict['power'],
+            p0_dict['exponential'],
+            p0_dict['logarithmic'],
+            p0_dict['hyperbolic'])},
+        index=['linear', 'quadratic', 'qubic', 'power', 'exponential', 'logarithmic', 'hyperbolic'])
+        
+    models_dict_keys_list = list(models_dict.keys())
+    models_dict_values_list = list(models_dict.values())
+        
+    # Initial guess for the parameters
+    if p0_dict_in:
+        p0_dict_in_keys_list = list(p0_dict_in.keys())
+        for elem in models_dict_keys_list:
+            if elem in p0_dict_in_keys_list:
+                models_dict[elem][1] = p0_dict_in[elem]
+            
+    # Calculations
+    X_fact = np.array(X_in)
+    Y_fact = np.array(Y_in)
+    
+    nx = 100 if not(nx_in) else nx_in
+    hx = (Xmax - Xmin)/(nx - 1)
+    X_calc_graph = np.linspace(Xmin, Xmax, nx)
+    
+    parameters_list = list()
+    models_list = list()
+    
+    error_metrics_df = pd.DataFrame(columns=['MSE', 'RMSE', 'MAE', 'MSPE', 'MAPE', 'RMSLE', 'R2'])
+    Y_calc_graph_df = pd.DataFrame({'X': X_calc_graph})
+    Y_calc_df = pd.DataFrame({
+        'X_fact': X_fact,
+        'Y_fact': Y_fact})
+    
+    for elem in models_list_in:
+        if elem in models_dict_keys_list:
+            func = models_dict[elem][0]
+            p0 = models_dict[elem][1]
+            popt_, _ = curve_fit(func, X_fact, Y_fact, p0=p0)
+            models_dict[elem].append(popt_)
+            Y_calc_graph = func(X_calc_graph, *popt_)
+            Y_calc = func(X_fact, *popt_)
+            Y_calc_graph_df[elem] = Y_calc_graph
+            Y_calc_df[elem] = Y_calc
+            parameters_list.append(popt_)
+            models_list.append(elem)
+            (model_error_metrics, result_error_metrics) = regression_error_metrics(Yfact=Y_fact, Ycalc=Y_calc_df[elem], model_name=elem)
+            error_metrics_df = pd.concat([error_metrics_df, result_error_metrics])
+                
+    parameters_df = pd.DataFrame(parameters_list,
+                                 index=models_list)
+    parameters_df = parameters_df.add_prefix('b')
+    result_df = parameters_df.join(error_metrics_df)
+                        
+    # Legend for a linear model
+    if "linear" in models_list_in:
+        b0_linear = round(result_df.loc["linear", "b0"], DecPlace)
+        b0_linear_str = str(b0_linear)
+        b1_linear = round(result_df.loc["linear", "b1"], DecPlace)
+        b1_linear_str = f' + {b1_linear}' if b1_linear > 0 else f' - {abs(b1_linear)}'
+        R2_linear = round(result_df.loc["linear", "R2"], DecPlace)
+        MSPE_linear = result_df.loc["linear", "MSPE"]
+        MAPE_linear = result_df.loc["linear", "MAPE"]
+        label_linear = 'linear: ' + r'$Y_{calc} = $' + b0_linear_str + b1_linear_str + f'{chr(183)}X' + ' ' + \
+            r'$(R^2 = $' + f'{R2_linear}' + ', ' + f'MSPE = {MSPE_linear}' + ', ' + f'MAPE = {MAPE_linear})'
+    
+    # Legend for a quadratic model
+    if "quadratic" in models_list_in:
+        b0_quadratic = round(result_df.loc["quadratic", "b0"], DecPlace)
+        b0_quadratic_str = str(b0_quadratic)
+        b1_quadratic = result_df.loc["quadratic", "b1"]
+        b1_quadratic_str = f' + {b1_quadratic:.{DecPlace}e}' if b1_quadratic > 0 else f' - {abs(b1_quadratic):.{DecPlace}e}'
+        b2_quadratic = result_df.loc["quadratic", "b2"]
+        b2_quadratic_str = f' + {b2_quadratic:.{DecPlace}e}' if b2_quadratic > 0 else f' - {abs(b2_quadratic):.{DecPlace}e}'
+        R2_quadratic = round(result_df.loc["quadratic", "R2"], DecPlace)
+        MSPE_quadratic = result_df.loc["quadratic", "MSPE"]
+        MAPE_quadratic = result_df.loc["quadratic", "MAPE"]
+        label_quadratic = 'quadratic: ' + r'$Y_{calc} = $' + b0_quadratic_str + b1_quadratic_str + f'{chr(183)}X' + b2_quadratic_str + f'{chr(183)}' + r'$X^2$' + ' ' + \
+            r'$(R^2 = $' + f'{R2_quadratic}' + ', ' + f'MSPE = {MSPE_quadratic}' + ', ' + f'MAPE = {MAPE_quadratic})'
+    
+    # Legend for a qubic model
+    if "qubic" in models_list_in:
+        b0_qubic = round(result_df.loc["qubic", "b0"], DecPlace)
+        b0_qubic_str = str(b0_qubic)
+        b1_qubic = result_df.loc["qubic", "b1"]
+        b1_qubic_str = f' + {b1_qubic:.{DecPlace}e}' if b1_qubic > 0 else f' - {abs(b1_qubic):.{DecPlace}e}'
+        b2_qubic = result_df.loc["qubic", "b2"]
+        b2_qubic_str = f' + {b2_qubic:.{DecPlace}e}' if b2_qubic > 0 else f' - {abs(b2_qubic):.{DecPlace}e}'
+        b3_qubic = result_df.loc["qubic", "b3"]
+        b3_qubic_str = f' + {b3_qubic:.{DecPlace}e}' if b3_qubic > 0 else f' - {abs(b3_qubic):.{DecPlace}e}'
+        R2_qubic = round(result_df.loc["qubic", "R2"], DecPlace)
+        MSPE_qubic = result_df.loc["qubic", "MSPE"]
+        MAPE_qubic = result_df.loc["qubic", "MAPE"]
+        label_qubic = 'qubic: ' + r'$Y_{calc} = $' + b0_qubic_str + b1_qubic_str + f'{chr(183)}X' + \
+            b2_qubic_str + f'{chr(183)}' + r'$X^2$' + b3_qubic_str + f'{chr(183)}' + r'$X^3$' + ' ' + \
+            r'$(R^2 = $' + f'{R2_qubic}' + ', ' + f'MSPE = {MSPE_qubic}' + ', ' + f'MAPE = {MAPE_qubic})'
+    
+    # Legend for a power model
+    if "power" in models_list_in:
+        b0_power = round(result_df.loc["power", "b0"], DecPlace)
+        b0_power_str = str(b0_power)
+        b1_power = round(result_df.loc["power", "b1"], DecPlace)
+        b1_power_str = str(b1_power)
+        R2_power = round(result_df.loc["power", "R2"], DecPlace)
+        MSPE_power = result_df.loc["power", "MSPE"]
+        MAPE_power = result_df.loc["power", "MAPE"]
+        label_power = 'power: ' + r'$Y_{calc} = $' + b0_power_str + f'{chr(183)}' + r'$X$'
+        for elem in b1_power_str:
+            label_power = label_power + r'$^{}$'.format(elem)
+        label_power = label_power  + ' ' + r'$(R^2 = $' + f'{R2_power}' + ', ' + f'MSPE = {MSPE_power}' + ', ' + f'MAPE = {MAPE_power})'
+    
+    # Legend for a exponential model
+    if "exponential" in models_list_in:
+        b0_exponential = round(result_df.loc["exponential", "b0"], DecPlace)
+        b0_exponential_str = str(b0_exponential)
+        b1_exponential = result_df.loc["exponential", "b1"]
+        b1_exponential_str = f'{b1_exponential:.{DecPlace}e}'
+        R2_exponential = round(result_df.loc["exponential", "R2"], DecPlace)
+        MSPE_exponential = result_df.loc["exponential", "MSPE"]
+        MAPE_exponential = result_df.loc["exponential", "MAPE"]
+        label_exponential = 'exponential: ' + r'$Y_{calc} = $' + b0_exponential_str + f'{chr(183)}' + r'$e$'
+        for elem in b1_exponential_str:
+            label_exponential = label_exponential + r'$^{}$'.format(elem)
+        label_exponential = label_exponential + r'$^{}$'.format(chr(183)) + r'$^X$' + ' ' + \
+            r'$(R^2 = $' + f'{R2_exponential}' + ', ' + f'MSPE = {MSPE_exponential}' + ', ' + f'MAPE = {MAPE_exponential})'
+    
+    # Legend for a logarithmic model
+    if "logarithmic" in models_list_in:
+        b0_logarithmic = round(result_df.loc["logarithmic", "b0"], DecPlace)
+        b0_logarithmic_str = str(b0_logarithmic)
+        b1_logarithmic = round(result_df.loc["logarithmic", "b1"], DecPlace)
+        b1_logarithmic_str = f' + {b1_logarithmic}' if b1_logarithmic > 0 else f' - {abs(b1_logarithmic)}'
+        R2_logarithmic = round(result_df.loc["logarithmic", "R2"], DecPlace)
+        MSPE_logarithmic = result_df.loc["logarithmic", "MSPE"]
+        MAPE_logarithmic = result_df.loc["logarithmic", "MAPE"]
+        label_logarithmic = 'logarithmic: ' + r'$Y_{calc} = $' + b0_logarithmic_str + b1_logarithmic_str + f'{chr(183)}ln(X)' + ' ' + \
+            r'$(R^2 = $' + f'{R2_logarithmic}' + ', ' + f'MSPE = {MSPE_logarithmic}' + ', ' + f'MAPE = {MAPE_logarithmic})'
+    
+    # Legend for a hyperbolic model
+    if "hyperbolic" in models_list_in:
+        b0_hyperbolic = round(result_df.loc["hyperbolic", "b0"], DecPlace)
+        b0_hyperbolic_str = str(b0_hyperbolic)
+        b1_hyperbolic = round(result_df.loc["hyperbolic", "b1"], DecPlace)
+        b1_hyperbolic_str = f' + {b1_hyperbolic}' if b1_hyperbolic > 0 else f' - {abs(b1_hyperbolic)}'
+        R2_hyperbolic = round(result_df.loc["hyperbolic", "R2"], DecPlace)
+        MSPE_hyperbolic = result_df.loc["hyperbolic", "MSPE"]
+        MAPE_hyperbolic = result_df.loc["hyperbolic", "MAPE"]
+        label_hyperbolic = 'hyperbolic: ' + r'$Y_{calc} = $' + b0_hyperbolic_str + b1_hyperbolic_str + f' / X' + ' ' + \
+            r'$(R^2 = $' + f'{R2_hyperbolic}' + ', ' + f'MSPE = {MSPE_hyperbolic}' + ', ' + f'MAPE = {MAPE_hyperbolic})'
+        
+    # Legends
+    label_legend_dict = {
+        'linear':      label_linear if "linear" in models_list_in else '',
+        'quadratic':   label_quadratic if "quadratic" in models_list_in else '',
+        'qubic':       label_qubic if "qubic" in models_list_in else '',
+        'power':       label_power if "power" in models_list_in else '',
+        'exponential': label_exponential if "exponential" in models_list_in else '',
+        'logarithmic': label_logarithmic if "logarithmic" in models_list_in else '',
+        'hyperbolic':  label_hyperbolic if "hyperbolic" in models_list_in else ''}
+    
+    # Graphics
+    color_dict = {
+        'linear':      'blue',
+        'quadratic':   'green',
+        'qubic':       'brown',
+        'power':       'magenta',
+        'exponential': 'cyan',
+        'logarithmic': 'orange',
+        'hyperbolic':  'grey'}
+    
+    if not(Xmin) and not(Xmax):
+        Xmin = min(X_fact)*0.99
+        Xmax = max(X_fact)*1.01
+    if not(Ymin) and not(Ymax):
+        Ymin = min(Y_fact)*0.99
+        Ymax = max(Y_fact)*1.01     
+        
+    fig, axes = plt.subplots(figsize=(graph_size))
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    sns.scatterplot(
+        x=X_fact, y=Y_fact,
+        label='data',
+        s=50,
+        color='red',
+        ax=axes)
+       
+    for elem in models_list_in:
+        if elem in models_dict_keys_list:
+            sns.lineplot(
+                x=X_calc_graph, y=Y_calc_graph_df[elem],
+                color=color_dict[elem],
+                linewidth=linewidth,
+                legend=True,
+                label=label_legend_dict[elem],
+                ax=axes)
+
+    axes.set_xlim(Xmin, Xmax)
+    axes.set_ylim(Ymin, Ymax)
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.legend(prop={'size': label_legend_fontsize})
+
+    plt.show()
+    
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+    
+    # result output
+    output_list = [result_df, Y_calc_df, Y_calc_graph_df]
+    result_list = [result_table, value_table_calc, value_table_graph]
+    result = list()
+    for i, elem in enumerate(result_list):
+        if elem:
+            result.append(output_list[i])
+    
+    # result display
+    for elem in ['MSPE', 'MAPE']:
+        result_df[elem] = result_df[elem].apply(lambda s: float(s[:-1]))
+    b_formatter = [b0_formatter, b1_formatter, b2_formatter, b3_formatter]
+    if result_table:
+        display(result_df
+                .style
+                    .format(
+                        precision=DecPlace, na_rep='-',
+                        formatter={
+                            'b0': b0_formatter if b0_formatter else '{:.4f}',
+                            'b1': b1_formatter if b1_formatter else '{:.4f}',
+                            'b2': b2_formatter if b2_formatter else '{:.4e}',
+                            'b3': b3_formatter if b3_formatter else '{:.4e}'})
+                    .highlight_min(color='green', subset=['MSE', 'RMSE', 'MAE', 'MSPE', 'MAPE'])
+                    .highlight_max(color='red', subset=['MSE', 'RMSE', 'MAE', 'MSPE', 'MAPE'])
+                    .highlight_max(color='green', subset='R2')
+                    .highlight_min(color='red', subset='R2')
+                    .applymap(lambda x: 'color: orange;' if abs(x) <= 10**(-(DecPlace-1)) else None, subset=parameters_df.columns))
+    
+    if value_table_calc:
+        display(Y_calc_df)
+    if value_table_graph:
+        display(Y_calc_graph_df)
+                    
+    return result    
 
     
