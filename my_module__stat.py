@@ -1771,7 +1771,685 @@ def graph_regression_plot_sns(
 #==============================================================================  
 
 #------------------------------------------------------------------------------
-#   Функция conjugacy_table_2x2_coefficient
+#   graph_contingency_tables_hist_3D
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_hist_3D(
+    data_df_in: pd.core.frame.DataFrame = None,
+    data_XY_list_in: list = None,
+    title_figure = None, title_figure_fontsize = 14,
+    title_axes = None, title_axes_fontsize = 16,
+    rows_label = None, cols_label = None, vertical_label = None, label_fontsize = 14, 
+    rows_ticklabels_list = None, cols_ticklabels_list = None,
+    tick_fontsize = 11, rows_tick_rotation = 0, cols_tick_rotation = 0, 
+    legend = None, legend_fontsize = 14,
+    labelpad = 20,
+    color=None,
+    tight_layout=True,
+    graph_size = (297/INCH, 210/INCH),
+    file_name = None):
+    
+    """Функция для визуализации категориальных данных: построение трехмерных гистограмм
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - dataframe). Defaults to None.
+        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
+        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
+        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 14.
+        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
+        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 16.
+        rows_label (_type_, optional):                  Подпись оси (по срокам). Defaults to None.
+        cols_label (_type_, optional):                  Подпись оси (по столбцам). Defaults to None.
+        vertical_label (_type_, optional):              Подпись вертикальной оси. Defaults to None.
+        label_fontsize (int, optional):                 Размер шрифта подписей осей. Defaults to 14.
+        rows_ticklabels_list (_type_, optional):        Список меток для оси (по строкам). Defaults to None.
+        cols_ticklabels_list (_type_, optional):        Список меток для оси (по столбцам). Defaults to None.
+        tick_fontsize (int, optional):                  Размер шрифта меток осей. Defaults to 11.
+        rows_tick_rotation (int, optional):             Угол поворота меток для оси (по строкам). Defaults to 0.
+        cols_tick_rotation (int, optional):             Угол поворота меток для оси (по столбцам). Defaults to 0.
+        legend (_type_, optional):                      Текст легенды. Defaults to None.
+        legend_fontsize (int, optional):                Размер шрифта легенды. Defaults to 14.
+        labelpad (int, optional):                       Расстояние между осью и метками. Defaults to 20.
+        color (_type_, optional):                       Цвет графика. Defaults to None.
+        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
+        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH, 210/INCH).
+        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+    """
+    
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size)
+    ax = plt.axes(projection = "3d")
+    #ax = fig.gca(projection='3d')
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    ax.set_title(title_axes, fontsize = title_axes_fontsize)
+        
+    # данные для построения графика
+    if data_df_in is not None:
+        data = np.array(data_df_in)
+        NumOfCols = data_df_in.shape[1]
+        NumOfRows = data_df_in.shape[0]
+    else:
+        data = np.array(data_XY_list_in)
+        NumOfCols = np.shape(data)[1]
+        NumOfRows = np.shape(data)[0]
+                
+    # координаты точки привязки столбцов
+    xpos = np.arange(0, NumOfCols, 1)
+    ypos = np.arange(0, NumOfRows, 1)
+        
+    # формируем сетку координат
+    xpos, ypos = np.meshgrid(xpos + 0.5, ypos + 0.5)
+    xpos = xpos.flatten()
+    ypos = ypos.flatten()
+    
+    # инициализируем для zpos нулевые значение, чтобы столбцы начинались с нуля
+    zpos = np.zeros(NumOfCols * NumOfRows)
+        
+    # формируем ширину и глубину столбцов
+    dx = np.ones(NumOfRows * NumOfCols) * 0.5
+    dy = np.ones(NumOfCols * NumOfRows) * 0.5
+        
+    # формируем высоту столбцов
+    dz = data.flatten()
+            
+    # построение трехмерного графика
+    if not color:
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz)
+    else:
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=color)
+            
+    # подписи осей
+    x_label = cols_label if cols_label else ''
+    y_label = rows_label if rows_label else ''
+    z_label = vertical_label if vertical_label else ''
+    
+    ax.set_xlabel(x_label, fontsize = label_fontsize)
+    ax.set_ylabel(y_label, fontsize = label_fontsize)
+    ax.set_zlabel(z_label, fontsize = label_fontsize)
+    
+    # метки осей
+    x_ticklabels_list = cols_ticklabels_list if cols_ticklabels_list \
+        else list(data_df.columns) if (data_df is not None) else ''
+    y_ticklabels_list = rows_ticklabels_list if rows_ticklabels_list \
+        else list(data_df.index) if data_df is not None else ''
+    
+    # форматирование меток осей (https://matplotlib.org/stable/api/ticker_api.html)
+    ax.xaxis.set_major_locator(IndexLocator(1.0, 0.25))
+    ax.yaxis.set_major_locator(IndexLocator(1.0, 0.25))
+        
+    # устанавливаем метки осей
+    ax.set_xticklabels(x_ticklabels_list, fontsize = tick_fontsize, rotation=rows_tick_rotation)
+    ax.set_yticklabels(y_ticklabels_list, fontsize = tick_fontsize, rotation=cols_tick_rotation)
+    
+    # расстояние между подписями осей и метками осей
+    ax.xaxis.labelpad = labelpad
+    ax.yaxis.labelpad = labelpad
+    
+    # легенда
+    if legend:
+        b1 = plt.Rectangle((0, 0), 1, 1)
+        ax.legend([b1], [legend], prop={'size': legend_fontsize})
+        
+    # автоматическая настройка плотной компоновки графика
+    if tight_layout:
+        fig.tight_layout()
+        
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   graph_contingency_tables_mosaicplot_sm
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_mosaicplot_sm(
+    data_df_in: pd.core.frame.DataFrame = None,
+    data_XY_list_in: list = None,
+    properties: dict = {},
+    labelizer: bool = True,
+    title_figure = None, title_figure_fontsize = 12,
+    title_axes = None, title_axes_fontsize = 16,
+    x_label = None, y_label = None, label_fontsize = 14, 
+    x_ticklabels_list = None, y_ticklabels_list = None,
+    x_ticklabels: bool = True, y_ticklabels: bool = True,
+    #tick_fontsize = 11,
+    tick_label_rotation = 0,
+    legend_list = None, legend_fontsize = 11,
+    text_fontsize = 16,
+    gap = 0.005,
+    horizontal: bool = True,
+    statistic: bool = True,
+    tight_layout=True,
+    graph_size = (297/INCH, 210/INCH),
+    file_name = None):
+    
+    """Функция для визуализации категориальных данных: построение мозаичных диаграмм
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
+        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
+        properties (dict, optional):                    Функция возвращает словарь свойств плиток графика (цвет, штриховка и пр.). Defaults to {}.
+        labelizer (bool, optional):                     Функция генерирует текст для отображения в центре каждой плитки графика. Defaults to True.
+        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
+        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 12.
+        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
+        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 16.
+        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
+        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
+        label_fontsize (int, optional):                 Размер шрифта подписей. Defaults to 14.
+        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
+        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
+        x_ticklabels (bool, optional):                  Отображать на графике (да/нет, True/False) метки для оси OX. Defaults to True.
+        y_ticklabels (bool, optional):                  Отображать на графике (да/нет, True/False) метки для оси OY. Defaults to True.
+        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
+        tick_label_rotation (int, optional):            Угол поворота меток для оси. Defaults to 0.
+        legend_list (_type_, optional):                 Список названий категорий для легенды. Defaults to None.
+        legend_fontsize (int, optional):                Размер шрифта легенды. Defaults to 11.
+        text_fontsize (int, optional):                  Размер шрифта подписей в центре плиток графика. Defaults to 16.
+        gap (float, optional):                          Список зазоров. Defaults to 0.005.
+        horizontal (bool, optional):                    Начальное направление разделения. Defaults to True.
+        statistic (bool, optional):                     Применять статистическую модель для придания цвета графику (да/нет, True/False). Defaults to True.
+        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
+        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH, 210/INCH).
+        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+    """
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig, axes = plt.subplots(figsize=graph_size)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    # данные для построения графика
+    if data_df_in is not None:
+        data_df = data_df_in.copy()
+        if x_ticklabels_list:
+            data_df = data_df.set_index(pd.Index(x_ticklabels_list))
+    else:
+        data_df = pd.DataFrame(data_XY_list_in)
+        if x_ticklabels_list:
+            data_df = data_df.set_index(pd.Index(x_ticklabels_list))
+        if y_ticklabels_list:
+            data_df.columns = y_ticklabels_list
+        
+    data_np = np.array(data_XY_list_in) if data_XY_list_in is not None \
+        else np.array(data_df_in)
+    
+    # установка шрифта подписей в теле графика 
+    if text_fontsize:
+        plt.rcParams["font.size"] = text_fontsize
+            
+    # метки осей
+    if data_df is not None:
+        x_list = list(map(str, x_ticklabels_list)) if x_ticklabels_list \
+            else list(map(str, data_df.index))
+        y_list = list(map(str, y_ticklabels_list)) if y_ticklabels_list \
+            else list(map(str, data_df.columns))
+    else:
+        x_list = list(map(str, x_ticklabels_list)) if x_ticklabels_list \
+            else list(map(str, range(data_np.shape[0])))
+        y_list = list(map(str, y_ticklabels_list)) if y_ticklabels_list \
+            else list(map(str, range(data_np.shape[1])))
+        
+    if not labelizer:
+        if not x_ticklabels:
+            axes.tick_params(axis='x', colors='white')
+        if not y_ticklabels:
+            axes.tick_params(axis='y', colors='white')
+
+    # подписи осей
+    x_label = x_label if x_label else ''
+    y_label = y_label if y_label else ''
+        
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)            
+            
+                
+    # формируем словарь (dict) data
+    data_dict = {}
+    for i, x in enumerate(x_list):
+        for j, y in enumerate(y_list):
+            data_dict[(x, y)] = data_np[i, j]
+    print(f'data_dict = \n{data_dict}')
+            
+    # формируем словарь (dict) labelizer и функцию labelizer_func
+    labelizer_dict = {}
+    for i, x in enumerate(x_list):
+        for j, y in enumerate(y_list):
+            labelizer_dict[(x, y)] = data_np[i, j] if labelizer else ''
+    labelizer_func = lambda k: labelizer_dict[k]  
+    
+    # построение графика
+    from statsmodels.graphics.mosaicplot import mosaic
+    mosaic(data_dict,
+           title=title_axes,
+           statistic=statistic,
+           ax=axes,
+           horizontal=horizontal,
+           gap=gap,
+           label_rotation=tick_label_rotation,
+           #axes_label=False,
+           labelizer=labelizer_func,
+           properties=properties)
+            
+    # легенда
+    if legend_list:
+        axes.legend(legend_list,
+                    bbox_to_anchor=(1, 0.5),
+                    loc="center left",
+                    #mode="expand",
+                    ncol=1)
+        
+    # автоматическая настройка плотной компоновки графика
+    if tight_layout:
+        fig.tight_layout()
+        
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+    
+    # возврат размера шрифта подписей в теле графика по умолчанию
+    if text_fontsize:
+        plt.rcParams["font.size"] = 10
+            
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   make_color_mosaicplot_dict
+#------------------------------------------------------------------------------
+
+def make_color_mosaicplot_dict(
+        rows_list, cols_list, 
+        props_dict_rows=None,
+        props_dict_cols=None):
+    
+    """Функция формирует словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) для функции graph_contingency_tables_mosaicplot_sm
+
+    Args:
+        rows_list (_type_):                 Список категорий (по строкам)
+        cols_list (_type_):                 Список категорий (по столбцам)
+        props_dict_rows (_type_, optional): Словарь цветовых свойств категорий (по строкам). Defaults to None.
+        props_dict_cols (_type_, optional): Словарь цветовых свойств категорий (по столбцам). Defaults to None.
+
+    Returns:
+        _type_: словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) для функции graph_contingency_tables_mosaicplot_sm
+    """
+    
+    result = {}
+    rows = list(map(str, rows_list))
+    cols = list(map(str, cols_list))
+    
+    if props_dict_rows:
+        for col in cols:
+            for row in rows:
+                result[(col, row)] = {'facecolor': props_dict_rows[row]}
+    
+    if props_dict_cols:
+        for col in cols:
+            for row in rows:
+                result[(col, row)] = {'facecolor': props_dict_cols[col]}
+    
+    return result    
+
+
+
+#------------------------------------------------------------------------------
+#   graph_contingency_tables_bar_freqint
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_bar_freqint(
+    data_df_in: pd.core.frame.DataFrame = None,
+    data_XY_list_in: list = None,
+    graph_inclusion='arf',
+    title_figure=None, title_figure_fontsize=14, title_axes_fontsize=11,
+    x_label = None, y_label = None, label_fontsize = 11, 
+    x_ticklabels_list = None, y_ticklabels_list = None, #tick_fontsize = 11,
+    color = None,
+    tight_layout=True,
+    result_output=False,
+    graph_size=None,
+    file_name=None):
+    
+    """Функция для визуализации категориальных данных: построение столбчатых диаграмм и графиков взаимодействия частот
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
+        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
+        graph_inclusion (str, optional):                Параметр, определяющий перечень графиков, которые строит функция:
+                                                            'a' - столбчатая диаграмма (в абсолютных частотах)
+                                                            'r' - столбчатая диаграмма (в относительных частотах)
+                                                            'f' - график взаимодействия частот
+                                                            Defaults to 'arf'.
+        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
+        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 14.
+        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 11.
+        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
+        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
+        label_fontsize (int, optional):                 Размер шрифта подписей по осям_. Defaults to 11.
+        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
+        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
+        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
+        color (_type_, optional):                       Список, задающий цвета для категорий. Defaults to None.
+        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
+        result_output (bool, optional):                 Выводить таблицу (DataFrame) c числовыми данными (да/нетб True/False). Defaults to False.
+        graph_size (_type_, optional):                  Размера графика. Defaults to None.
+        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+    """
+    
+    # данные для построения графика
+    if data_df_in is not None:
+        data_df_abs = data_df_in.copy()
+        if x_ticklabels_list:
+            data_df_abs = data_df_abs.set_index(pd.Index(x_ticklabels_list))
+        if y_ticklabels_list:
+            data_df_abs.columns = y_ticklabels_list
+    else:
+        data_df_abs = pd.DataFrame(data_XY_list_in)
+        if x_ticklabels_list:
+            data_df_abs = data_df_abs.set_index(pd.Index(x_ticklabels_list))
+        if y_ticklabels_list:
+            data_df_abs.columns = y_ticklabels_list
+    data_df_rel = None
+    
+    data_np = np.array(data_XY_list_in) if data_XY_list_in is not None \
+        else np.array(data_df_in)
+    
+    # определение формы и размеров области рисования (Axes)
+    count_graph = len(graph_inclusion)    # число графиков
+    ax_rows = 1
+    ax_cols = count_graph    # размерность области рисования (Axes)
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    graph_size_dict = {
+        1: (297/INCH*0.75, 210/INCH),
+        2: (297/INCH*1.5,  210/INCH),
+        3: (297/INCH*2.25, 210/INCH)}
+    
+    if not(graph_size):
+        graph_size = graph_size_dict[count_graph]
+    
+    fig = plt.figure(figsize=graph_size)
+    
+    if count_graph == 3:
+        ax1 = plt.subplot(1,3,1)
+        ax2 = plt.subplot(1,3,2)
+        ax3 = plt.subplot(1,3,3)
+    elif count_graph == 2:
+        ax1 = plt.subplot(1,2,1)
+        ax2 = plt.subplot(1,2,2)
+    elif count_graph == 1:
+        ax1 = plt.subplot(1,1,1)
+        
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    
+    # столбчатая диаграмма (абсолютные частоты)
+    if 'a' in graph_inclusion:
+        if color:
+            data_df_abs.plot.bar(
+                color = color,
+                stacked=True,
+                rot=0,
+                legend=True,
+                ax=ax1)
+        else:
+            data_df_abs.plot.bar(
+                #color = color_list,
+                stacked=True,
+                rot=0,
+                legend=True,
+                ax=ax1)
+        ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+        ax1.set_title('Absolute values', fontsize=title_axes_fontsize)
+        ax1.set_xlabel(x_label, fontsize = label_fontsize)
+        ax1.set_ylabel(y_label, fontsize = label_fontsize)
+            
+    # столбчатая диаграмма (относительные частоты)
+    if 'r' in graph_inclusion:
+        data_df_rel = data_df_abs.copy()
+        sum_data = np.sum(data_np)
+        data_df_abs.sum(axis=1)
+        
+        for col in data_df_rel.columns:
+            data_df_rel[col] = data_df_rel[col] / data_df_abs.sum(axis=1)
+        
+        if color:
+            data_df_rel.plot.bar(
+                color = color,
+                stacked=True,
+                rot=0,
+                legend=True,
+                ax = ax1 if (graph_inclusion == 'r') or (graph_inclusion == 'rf') else ax2,
+                alpha = 0.5)
+        else:
+            data_df_rel.plot.bar(
+                #color = color,
+                stacked=True,
+                rot=0,
+                legend=True,
+                ax = ax1 if (graph_inclusion == 'r') or (graph_inclusion == 'rf') else ax2,
+                alpha = 0.5)
+        
+        if (graph_inclusion == 'r') or (graph_inclusion == 'rf'):
+            ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax1.set_title('Relative values', fontsize=title_axes_fontsize)
+            ax1.set_xlabel(x_label, fontsize = label_fontsize)
+            ax1.set_ylabel(y_label, fontsize = label_fontsize)
+        else:
+            ax2.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax2.set_title('Relative values', fontsize=title_axes_fontsize)
+            ax2.set_xlabel(x_label, fontsize = label_fontsize)
+            ax2.set_ylabel(y_label, fontsize = label_fontsize)
+                            
+    # график взаимодействия частот
+    if 'f' in graph_inclusion:
+        if color:
+            sns.lineplot(
+                data=data_df_abs,
+                palette = color,
+                dashes=False,
+                lw=3,
+                #markers=['o','o'],
+                markersize=10,
+                ax=ax1 if (graph_inclusion == 'f') else ax3 if (graph_inclusion == 'arf') else ax2)
+        else:
+            sns.lineplot(
+                data=data_df_abs,
+                #palette = color,
+                dashes=False,
+                lw=3,
+                #markers=['o','o'],
+                markersize=10,
+                ax=ax1 if (graph_inclusion == 'f') else ax3 if (graph_inclusion == 'arf') else ax2)
+        
+        if (graph_inclusion == 'f'):
+            ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax1.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax1.set_xlabel(x_label, fontsize = label_fontsize)
+            ax1.set_ylabel(y_label, fontsize = label_fontsize)
+        elif (graph_inclusion == 'arf'):
+            ax3.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax3.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax3.set_xlabel(x_label, fontsize = label_fontsize)
+            ax3.set_ylabel(y_label, fontsize = label_fontsize)
+        else:
+            ax2.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax2.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax2.set_xlabel(x_label, fontsize = label_fontsize)
+            ax2.set_ylabel(y_label, fontsize = label_fontsize)
+    
+    # автоматическая настройка плотной компоновки графика
+    if tight_layout:
+        fig.tight_layout()
+    
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    # формирование и вывод результата
+    if result_output:
+        data_df_abs['sum'] = data_df_abs.sum(axis=1)
+        if data_df_rel is not None:
+            data_df_rel['sum'] = data_df_rel.sum(axis=1)
+            print('\nAbsolute values:')
+            display(data_df_abs)
+            print('\nRelative values:')
+            display(data_df_rel)
+        else:
+            print('\nAbsolute values:')
+            display(data_df_abs)
+    
+    return
+
+
+
+
+
+#------------------------------------------------------------------------------
+#   graph_contingency_tables_heatmap
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_heatmap(
+    data_df_in: pd.core.frame.DataFrame = None,
+    data_XY_list_in: list = None,
+    title_figure = None, title_figure_fontsize = 12,
+    title_axes = None, title_axes_fontsize = 14,
+    x_label = None, y_label = None, #label_fontsize = 11, 
+    x_ticklabels_list = None, y_ticklabels_list = None, #tick_fontsize = 11,
+    values_type = 'absolute',
+    color_map='binary',
+    robust = False,
+    fmt = '.0f',
+    tight_layout=True,
+    #result_output = False,
+    graph_size = (297/INCH/2, 210/INCH/2),
+    file_name = None):
+    
+    """Функция для визуализации категориальных данных: построение графика тепловой карты (heatmap)
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
+        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
+        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
+        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 12.
+        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
+        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 14.
+        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
+        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
+        label_fontsize (int, optional):                 Временно заблокировано. Defaults to 11.
+        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
+        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
+        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
+        values_type (str, optional):                    Параметр, задающий в каких частотах строится график:
+                                                            абсолютные/относительные, absolute/relative.
+                                                            Defaults to 'absolute'.
+        color_map (str, optional):                      Цветовая карта (colormap) для графика. Defaults to 'binary'.
+        robust (bool, optional):                        Если True и vmin или vmax отсутствуют, диапазон цветовой карты вычисляется
+                                                            с надежными квантилями вместо экстремальных значений. Defaults to False.
+        fmt (str, optional):                            Числовой формат подписей в центре плиток графика. Defaults to '.0f'.
+        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
+        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH/2, 210/INCH/2).
+        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+    """
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig, axes = plt.subplots(figsize=graph_size)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    # данные для построения графика
+    if data_df_in is not None:
+        data_df = data_df_in.copy()
+        if x_ticklabels_list:
+            data_df = data_df.set_index(pd.Index(x_ticklabels_list))
+        if y_ticklabels_list:
+            data_df.columns = y_ticklabels_list
+    else:
+        data_df = pd.DataFrame(data_XY_list_in)
+        if x_ticklabels_list:
+            data_df = data_df.set_index(pd.Index(x_ticklabels_list))
+        if y_ticklabels_list:
+            data_df.columns = y_ticklabels_list
+        
+    data_np = np.array(data_XY_list_in) if data_XY_list_in is not None \
+        else np.array(data_df_in)
+    
+    data_df_rel = None
+    
+    if values_type == 'relative':         
+        data_df_rel = data_df.copy()
+        sum_data = np.sum(data_np)
+        data_df.sum(axis=1)
+        
+        for col in data_df_rel.columns:
+            data_df_rel[col] = data_df_rel[col] / sum_data
+        
+    # построение графика
+    if values_type == "absolute":
+        if not robust: 
+            sns.heatmap(data_df.transpose(),
+                #vmin=0, vmax=1,
+                linewidth=0.5,
+                cbar=True,
+                fmt=fmt,
+                annot=True,
+                cmap=color_map,
+                ax=axes)
+        else:
+            sns.heatmap(data_df.transpose(),
+                #vmin=0, vmax=1,
+                linewidth=0.5,
+                cbar=True,
+                robust=True,
+                fmt=fmt,
+                annot=True,
+                cmap=color_map,
+                ax=axes)
+    else:
+        if not robust: 
+            sns.heatmap(data_df_rel.transpose(),
+                vmin=0, vmax=1,
+                linewidth=0.5,
+                cbar=True,
+                fmt=fmt,
+                annot=True,
+                cmap=color_map,
+                ax=axes)
+        else:
+            sns.heatmap(data_df_rel.transpose(),
+                vmin=0, vmax=1,
+                linewidth=0.5,
+                cbar=True,
+                robust=True,
+                fmt=fmt,
+                annot=True,
+                cmap=color_map,
+                ax=axes)
+    
+    # автоматическая настройка плотной компоновки графика
+    if tight_layout:
+        fig.tight_layout()
+        
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+    
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   old Функция conjugacy_table_2x2_coefficient
 #------------------------------------------------------------------------------
 
 def conjugacy_table_2x2_independence_check (X, p_level=0.95):
@@ -1847,7 +2525,7 @@ def conjugacy_table_2x2_independence_check (X, p_level=0.95):
  
 
 #------------------------------------------------------------------------------
-#   Функция conjugacy_table_IxJ_independence_check
+#   old Функция conjugacy_table_IxJ_independence_check
 #------------------------------------------------------------------------------
 
 def conjugacy_table_IxJ_independence_check (X_in, p_level=0.95):
@@ -2050,7 +2728,7 @@ def conjugacy_table_IxJ_independence_check (X_in, p_level=0.95):
 
 
 #------------------------------------------------------------------------------
-#   Функция graph_contingency_tables_bar_pd
+#   old Функция graph_contingency_tables_bar_pd
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_bar_pd(
@@ -2126,7 +2804,7 @@ def graph_contingency_tables_bar_pd(
 
 
 #------------------------------------------------------------------------------
-#   Функция graph_contingency_tables_freqint_pd
+#   old Функция graph_contingency_tables_freqint_pd
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_bar_freqint_pd(
@@ -2172,7 +2850,7 @@ def graph_contingency_tables_bar_freqint_pd(
         data=data_pd,
         dashes=False,
         lw=3,
-        markers=['o','o'],
+        #markers=['o','o'],
         markersize=10,
         ax=ax3)
     ax3.set_title('Graph of frequency interactions', fontsize=14)
