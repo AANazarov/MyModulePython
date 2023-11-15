@@ -1,2 +1,2 @@
 # MyModulePython
-Различные пользовательские функции / Various custom functions
+Пользовательский инструментарий / User tools
