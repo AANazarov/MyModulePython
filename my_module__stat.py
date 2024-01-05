@@ -75,8 +75,90 @@ TABLE_HEAD_3 = ('-' * NUMBER_CHAR_LINE)
 f_size = 8    # пользовательская переменная для задания базового размера шрифта
 
 
+
+#=============================================================================
+#               СОДЕРЖАНИЕ
+#=============================================================================
+
+#------------------------------------------------------------------------------
+#   1. ФУНКЦИИ ДЛЯ ПЕРВИЧНОЙ ОБРАБОТКИ ДАННЫХ:
+#    
+#       df_system_memory
+#       unique_values
+#       transformation_to_category
+#       df_detection_values
+#
+#
+#   2. ФУНКЦИИ ДЛЯ ОПИСАТЕЛЬНОЙ СТАТИСТИКИ:
+#
+#       descriptive_characteristics
+#       descriptive_characteristics_df_group
+#
+#
+#   3. ФУНКЦИИ ДЛЯ ОЦЕНКИ РАЗЛИЧНЫХ ПАРАМЕТРОВ
+#
+#       confidence_interval_ratio
+#
+#
+#   4. ФУНКЦИИ ДЛЯ ПРОВЕРКИ РАЗЛИЧНЫХ ГИПОТЕЗ
+#
+#       KS_ES_2samp_test
+#       Mann_Whitney_test
+#       Wilcoxon_test
+#       Kruskal_Wallis_test
+#       Ansari_Bradley_test
+#       Mood_test
+#       Levene_test
+#       Fligner_Killeen_test
+#
+#
+#   5. ФУНКЦИИ ДЛЯ ВИЗУАЛИЗАЦИИ
+#
+#       graph_hist_boxplot_probplot_sns
+#       graph_hist_boxplot_probplot_XY_sns
+#       graph_ecdf_cdf_mpl
+#       graph_lorenz_curve
+#       graph_df_heatmap
+#
+#
+#   6. ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ ЗАКОНОВ РАСПРЕДЕЛЕНИЯ
+#
+#       norm_distr_check
+#
+#
+#   7. ФУНКЦИИ ДЛЯ ВЫЯВЛЕНИЯ АНОМАЛЬНЫХ ЗНАЧЕНИЙ (ВЫБРОСОВ)
+#
+#       detecting_outliers_mad_test
+#
+#
+#   8. ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ КАТЕГОРИАЛЬНЫХ ДАННЫХ
+#
+#       graph_contingency_tables_hist_3D
+#       graph_contingency_tables_mosaicplot_sm
+#       make_color_mosaicplot_dict
+#       graph_contingency_tables_bar_freqint
+#       graph_contingency_tables_heatmap
+#       conjugacy_table_independence_check
+#
+#
+#   9. ФУНКЦИИ ДЛЯ КОРРЕЛЯЦИОННОГО АНАЛИЗА
+#
+#       Cheddock_scale_check
+#       Evans_scale_check
+#       Rea_Parker_scale_check
+#
+#       rank_corr_coef_check
+#
+#
+#
+#
+#   СТАРЫЕ ФУНКЦИИ
+#
+#------------------------------------------------------------------------------
+
+
 #==============================================================================
-#               ФУНКЦИИ ДЛЯ ПЕРВИЧНОЙ ОБРАБОТКИ ДАННЫХ
+#               1. ФУНКЦИИ ДЛЯ ПЕРВИЧНОЙ ОБРАБОТКИ ДАННЫХ
 #==============================================================================
 
 '''print(TABLE_HEAD_2)
@@ -91,41 +173,92 @@ print(TABLE_HEAD_2, 2*'\n')'''
 #   Возвращает объем памяти, занимаемой DataFrame (на системном уровне)
 #------------------------------------------------------------------------------
 
-def df_system_memory(df_in, measure_unit='MB', digit=2, detailed=True):
+def df_system_memory(
+    df_in:           pd.core.frame.DataFrame,
+    measure_unit:    str = 'MB',
+    digit:           int = 2,
+    detailed:        bool = True):
+    
+    """
+    Возвращает объем памяти, занимаемой DataFrame (на системном уровне)
+
+    Args:
+        df_in (pd.core.frame.DataFrame):    
+            массив исходных данных.
+        
+        measure_unit (str, optional):    
+            вид единиц измерения ('MB' - мБ, 'B' - байт). 
+            Defaults to 'MB'.
+        
+        digit (int, optional):        
+            точность выводимого результата. 
+            Defaults to 2.
+        
+        detailed (bool, optional):         
+            логический параметр: True/False - выводить/не выводить детализацию 
+            по столбцам датасета). 
+            Defaults to True.
+
+    Returns:    
+        result (float):
+            объем памяти, занимаемой DataFrame (на системном уровне)
+            
+    """
+    
     df_in_memory_usage = df_in.memory_usage(deep=True)
     if detailed:
         display(df_in_memory_usage)        
     
     df_in_memory_usage_sum = df_in_memory_usage.sum()
     if measure_unit=='MB':
-        return round(df_in_memory_usage_sum / (2**20), digit)
+        result = round(df_in_memory_usage_sum / (2**20), digit)
+        
     elif measure_unit=='B':
-        return round(df_in_memory_usage_sum, 0)
+        result = round(df_in_memory_usage_sum, 0)
+
+    return result 
     
-# Тест функции
-
-'''data = pd.DataFrame(np.random.rand(3, 2),
-                    columns=['foo', 'bar'],
-                    index=['a', 'b', 'c'])
-
-print(f"data = \n{data}\n {type(data)}\n")
-memory_1 = df_system_memory(data, digit=3)
-print(f"Объем занимаемой памяти (на системном уровне): {memory_1} MB")'''
-
+    
 
 #------------------------------------------------------------------------------
 #   Функция unique_values
 #
-#   Принимает в качестве аргумента **DataFrame** и возвращает 
-#   другой **DataFrame** со следующей структурой:
-#    * индекс - наименования столбцов из исходного **DataFrame**
-#    * столбец **Num_Unique** - число уникальных значений
-#    * столбец **Type** - тип данных
-#    * столбец **Memory_usage (MB)** - объем занимаемой памяти на системном 
-#      уровне (в МБ)
+#   Возвращает число уникальных значений, тип данных и объем занимаемой памяти 
+#   по столбцам исходного датасета
 #------------------------------------------------------------------------------
 
-def unique_values(df_in, sorting=True):
+def unique_values(
+    df_in:      pd.core.frame.DataFrame,
+    sorting:    bool = True):
+    
+    """
+    Возвращает число уникальных значений, тип данных и объем занимаемой памяти 
+    по столбцам исходного датасета.
+
+    Args:
+        df_in (pd.core.frame.DataFrame):
+            массив исходных данных.
+            
+        sorting (bool, optional):
+            логический параметр: True/False - сортировать/не сортировать 
+            признаки по степени убывания уникальных значений).
+            Defaults to True.
+    
+    Returns:    
+        df_out (pd.core.frame.DataFrame):
+            результат            
+            
+    Notes:
+        Принимает в качестве аргумента DataFrame и возвращает другой 
+        DataFrame со следующей структурой:
+            - индекс - наименования столбцов из исходного DataFrame
+            - столбец Num_Unique - число уникальных значений
+            - столбец Type - тип данных
+            - столбец Memory_usage (MB) - объем занимаемой памяти на системном 
+                уровне (в МБ)
+            
+    """
+    
     df_out = pd.DataFrame(
         np.transpose(
             [df_in.nunique(),
@@ -138,47 +271,113 @@ def unique_values(df_in, sorting=True):
     if sorting:
         return df_out.sort_values(by='Num_Unique', ignore_index=False)
     else:
-        return df_out
+        return df_out 
+
 
 
 #------------------------------------------------------------------------------
 #   Функция transformation_to_category
 #
-#   Принимает в качестве аргумента **DataFrame** и преобразует выбранные 
-#    признаки в категориальные
+#   Принимает в качестве аргумента DataFrame и преобразует выбранные 
+#   признаки в категориальные
 #------------------------------------------------------------------------------  
 
-def transformation_to_category(df_in, max_unique_count=150, cols_to_exclude=None):
+def transformation_to_category(
+    data_df:             pd.core.frame.DataFrame,
+    max_unique_count:    int = 150, 
+    cols_to_exclude:     list = None):
+    
+    """
+    Принимает в качестве аргумента DataFrame и преобразует выбранные признаки 
+    в категориальные.
+
+    Args:
+        df_in (pd.core.frame.DataFrame):     
+            массив исходных данных.
+            
+        max_unique_count (int, optional):    
+            максимальное число уникальных значений, при котором признак 
+            преобразуется в категориальный. 
+            Defaults to 150.
+            
+        cols_to_exclude (list, optional):    
+            список-исключение признаков, которые не преобразуются 
+            в категориальные. 
+            Defaults to None.
+    
+    
+    Returns:    
+        data_df (pd.core.frame.DataFrame):
+            преобразованный DataFrame            
+            
+    """
+    
     # количество уникальных значений по столбцам исходной таблицы
-    df_number_unique_values = unique_values(df_in, sorting=False)
+    df_number_unique_values = unique_values(data_df, sorting=False)    
     
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! АРГУМЕНТ ПО УМОЛЧАНИЮ
-    cols_to_exclude = cols_to_exclude or []
+    # особенность аргумента по умолчанию, который является списком (list)
+    cols_to_exclude = cols_to_exclude or []    
     
-    for col in df_in.columns:
-        # проверяем условие
-        if (df_in[col].nunique() < max_unique_count) and (col not in cols_to_exclude):
-            df_in[col] = df_in[col].astype('category')    # преобразуем тип столбца
+    for col in data_df.columns:
+        if ((data_df[col].nunique() < max_unique_count) and 
+            (col not in cols_to_exclude)):    
+                data_df[col] = data_df[col].astype('category')    
 
-    return df_in  
+    return data_df   
 
-
+    
 
 #------------------------------------------------------------------------------
 #   Функция df_detection_values
-#------------------------------------------------------------------------------  
+#
+#   Визуализация пропусков в датасете с помощью графика тепловой карты
+#------------------------------------------------------------------------------
 
 def df_detection_values(
-    df_in,
-    detection_values=[nan],
-    color_highlight = 'yellow',
-    graph_size=(210/INCH, 297/INCH/2)):
+    df_in:               pd.core.frame.DataFrame,
+    detection_values:    list = [nan, pd.NA, 0],
+    color_highlight:     str = 'yellow',
+    graph_size:          tuple = (210/INCH, 297/INCH/2)):
+    
+    """
+    Визуализация пропусков в датасете с помощью графика тепловой карты 
+    (heatmap).
+
+    Args:
+        df_in (pd.core.frame.DataFrame):      
+            массив исходных данных.
+            
+        detection_values (list, optional):    
+            список значений, которые могут рассматриваться как пропуски. 
+            Defaults to [nan, pd.NA, 0].
+            
+        color_highlight (str, optional):      
+            цвет для маркирования пропусков на графике тепловой карты. 
+            Defaults to 'yellow'.
+            
+        graph_size (tuple, optional):         
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм
+    
+    Returns:
+        result_df (pd.core.frame.DataFrame):        
+            таблица (DataFrame) с числом пропусков по признакам исходного 
+            датасета. 
+            
+        detection_values_df (pd.core.frame.DataFrame):    
+            таблица (DataFrame), имеющая структуру исходного датасета,
+            в которой пропуски маркированы как True, 
+            а отсутствие пропуска - False.
+            
+    """
     
     cols = df_in.columns
     detection_values_df = df_in.isin(detection_values)
     
     col_size = np.array([df_in[elem].size for elem in cols])
     col_detection_values_count = [detection_values_df[elem].sum() for elem in cols]
+        
     result_df = pd.DataFrame(
         {'size': col_size,
          'detected values': col_detection_values_count,
@@ -196,8 +395,10 @@ def df_detection_values(
     return result_df, detection_values_df
 
 
+
+
 #==============================================================================
-#               ФУНКЦИИ ДЛЯ ОПИСАТЕЛЬНОЙ СТАТИСТИКИ
+#               2. ФУНКЦИИ ДЛЯ ОПИСАТЕЛЬНОЙ СТАТИСТИКИ
 #==============================================================================
 
 
@@ -211,8 +412,35 @@ def df_detection_values(
 
 def descriptive_characteristics(
     X,
-    p_level=0.95,
-    auxiliary_table: bool = False):
+    p_level:            float = 0.95,
+    auxiliary_table:    bool = False):
+    
+    """
+    Принимает в качестве аргумента np.ndarray и возвращает DataFrame,
+    содержащий основные статистические характеристики с доверительными 
+    интервалами и ошибками определения - расширенный аналог describe.
+
+    Args:
+        X:                       
+            мсходный массив данных
+            
+        p_level (float, optional):           
+            доверительная вероятность. 
+            Defaults to 0.95.
+            
+        auxiliary_table (bool, optional):    
+            логический параметр: True/False - возвращать/не возвращать таблицу 
+            со вспомогательными значениями.
+            Defaults to False.
+    
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат            
+        
+        result_auxiliary (pd.core.frame.DataFrame):
+            таблица со вспомогательными значениями
+                    
+    """
     
     a_level = 1 - p_level
     
@@ -250,7 +478,7 @@ def descriptive_characteristics(
     
     # медиана
     Me = np.median(X)
-    C_p_Me = floor((N +  1 - u_p*sqrt(N + 0.5 - 0.25*u_p**2))/2)   # вспом.величина
+    C_p_Me = floor((N +  1 - u_p*sqrt(N + 0.5 - 0.25*u_p**2))/2) # вспом.величина
     X_sort = np.array(sorted(X))
     conf_int_low_Me = X_sort[C_p_Me-1]
     conf_int_up_Me = X_sort[(N - C_p_Me + 1) - 1]
@@ -258,9 +486,11 @@ def descriptive_characteristics(
     rel_err_Me = abs_err_Me / Me * 100
     # довер.интервал для медианы - см. ГОСТ Р 50779.24-2005, п.6.2-6.3
     if X_mean < Me:
-        Me_note = 'distribution is negative skewed (левосторонняя асимметрия) (mean < median)'
+        Me_note = 'distribution is negative skewed \
+            (левосторонняя асимметрия) (mean < median)'
     else:
-        Me_note = 'distribution is positive skewed (правосторонняя асимметрия) (mean > median)'
+        Me_note = 'distribution is positive skewed \
+            (правосторонняя асимметрия) (mean > median)'
     
     # мода        
     Mo = stat.mode(X)
@@ -279,8 +509,12 @@ def descriptive_characteristics(
     rel_err_X_std = abs_err_X_std / X_std * 100   
     
     # выборочное С.Л.О.
-    mad_X = pd.Series(X).mad()
-    
+    # https://en.wikipedia.org/wiki/Median_absolute_deviation
+    # также смотри 
+    # https://www.statsmodels.org/stable/generated/statsmodels.robust.scale.mad.html
+    #mad_X = pd.Series(X).mad()
+    mad_X = sps.median_abs_deviation(X)
+        
     # минимальное, максимальное значения и вариационный размах
     min_X = np.amin(X)
     max_X = np.amax(X)
@@ -306,7 +540,8 @@ def descriptive_characteristics(
         CV_note = 'CV > 0.33 (heterogeneous population)'
     
     # квартильный коэффициент дисперсии
-    QCD = (np.percentile(X, 75) - np.percentile(X, 25)) / (np.percentile(X, 75) + np.percentile(X, 25))
+    QCD = (np.percentile(X, 75) - np.percentile(X, 25)) / (np.percentile(X, 75) 
+        + np.percentile(X, 25))
     
     # показатель асимметрии
     As = sps.skew(X)
@@ -314,26 +549,33 @@ def descriptive_characteristics(
     rel_err_As = abs_err_As / As * 100
     
     if abs(As) <= 0.25:
-        As_note = 'distribution is approximately symmetric (распределение приблизительно симметричное) (abs(As)<=0.25)'
+        As_note = 'distribution is approximately symmetric \
+            (распределение приблизительно симметричное) (abs(As)<=0.25)'
     elif abs(As) <= 0.5:
         if As < 0:
-            As_note = 'distribution is moderately negative skewed (умеренная левосторонняя асимметрия) (abs(As)<=0.5, As<0)'
+            As_note = 'distribution is moderately negative skewed \
+                (умеренная левосторонняя асимметрия) (abs(As)<=0.5, As<0)'
         else:
-            As_note = 'distribution is moderately positive skewed (умеренная правосторонняя асимметрия) (abs(As)<=0.5, As>0)'
+            As_note = 'distribution is moderately positive skewed \
+                (умеренная правосторонняя асимметрия) (abs(As)<=0.5, As>0)'
     else:
         if As < 0:
-            As_note = 'distribution is highly negative skewed (значительная левосторонняя асимметрия) (abs(As)>0.5, As<0)'
+            As_note = 'distribution is highly negative skewed \
+                (значительная левосторонняя асимметрия) (abs(As)>0.5, As<0)'
         else:
-            As_note = 'distribution is highly positive skewed (значительная правосторонняя асимметрия) (abs(As)>0.5, As>0)'
+            As_note = 'distribution is highly positive skewed \
+                (значительная правосторонняя асимметрия) (abs(As)>0.5, As>0)'
             
     # показатель эксцесса
     Es = sps.kurtosis(X)
     abs_err_Es = sqrt(24*N*(N-1)**2 / ((N-3)*(N-2)*(N+3)*(N+5)))
     rel_err_Es = abs_err_Es / Es * 100
     if Es > 0:
-        Es_note = 'leptokurtic distribution (островершинное распределение) (Es>0)'
+        Es_note = 'leptokurtic distribution (островершинное распределение) \
+            (Es>0)'
     elif Es < 0:
-        Es_note = 'platykurtic distribution (плосковершинное распределение) (Es<0)'
+        Es_note = 'platykurtic distribution (плосковершинное распределение) \
+            (Es<0)'
     else:
         Es_note = 'mesokurtic distribution (нормальное распределение) (Es=0)'
     
@@ -346,13 +588,15 @@ def descriptive_characteristics(
             'count', 'mean', 'median', 'mode',
             'variance', 'standard deviation', 'mean absolute deviation',
             'min', '5%', '25% (Q1)', '50% (median)', '75% (Q3)', '95%', 'max',
-            'range = max − min', 'IQR = Q3 - Q1', 'CV = mean/std', 'QCD = (Q3-Q1)/(Q3+Q1)',
+            'range = max − min', 'IQR = Q3 - Q1', 'CV = std/mean', 
+            'QCD = (Q3-Q1)/(Q3+Q1)',
             'skew (As)', 'kurtosis (Es)'),
         'evaluation': (
             N, X_mean, Me, Mo,
             D_X, X_std, mad_X,
             min_X,
-            np.percentile(X, 5), np.percentile(X, 25), np.percentile(X, 50), np.percentile(X, 75), np.percentile(X, 95),
+            np.percentile(X, 5), np.percentile(X, 25), np.percentile(X, 50), 
+            np.percentile(X, 75), np.percentile(X, 95),
             max_X,
             R, IQR, CV, QCD,
             As, Es),
@@ -382,7 +626,8 @@ def descriptive_characteristics(
             '', '', rel_err_CV, '',
             rel_err_As, rel_err_Es),
         'note': (
-            '', '', Me_note, '', '', '', '', '', '', '', '', '', '', '', '', '', CV_note, '',
+            '', '', Me_note, '', '', '', '', '', '', '', '', '', '', '', '', 
+            '', CV_note, '',
             As_note, Es_note)
         })
             
@@ -413,51 +658,764 @@ def descriptive_characteristics(
         return result, result_auxiliary
     else:
         return result
+    
+    
+    
+#------------------------------------------------------------------------------
+#   Функция descriptive_characteristics_df_group
+#   
+#   Получение дескриптивной статистики в разрезе категорий некоего 
+#   качественного признака: функция принимает в качестве аргумента DataFrame, 
+#   выполняет группировку по выбранному качественному признаку и рассчитывает 
+#   основные дескриптивные показатели выбранного количественного признака 
+#   в разрезе качественного признака.
+#------------------------------------------------------------------------------
+
+def descriptive_characteristics_df_group(
+    data_df:                  pd.core.frame.DataFrame,
+    column_qualitative:       str,
+    column_quantitative:      str):
+    
+    """
+    Получение дескриптивной статистики в разрезе категорий некоего 
+    качественного признака: функция принимает в качестве аргумента DataFrame, 
+    выполняет группировку по выбранному качественному признаку и рассчитывает 
+    основные дескриптивные показатели выбранного количественного признака 
+    в разрезе качественного признака.
+
+    Args:
+        data_df (pd.core.frame.DataFrame):           
+            массив исходных данных.
+            
+        column_qualitative (str):                    
+            имя количественного признака в DataFrame.
+            
+        column_quantitative (str):                   
+            имя качественного признака в DataFrame.
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            датасет со статистическими характеристиками
+            
+    """
+    
+    # создаем отдельные DataFrame, отфильтрованный по качественному признаку, 
+    # и сохраняем их в словарь (dict)
+    #column_quantitative_index_list = list(data_df[column_quantitative].unique())
+    column_quantitative_index_list = \
+        data_df[column_quantitative].unique().tolist()
+    data_df_group_dict = dict()
+    for elem in column_quantitative_index_list:
+        mask_temp = data_df[column_quantitative] == elem
+        data_group_temp = pd.DataFrame(data_df[mask_temp])
+        #display(data_group_temp)
+        data_df_group_dict[elem] = data_group_temp
+   
+    # формируем DataFrame с дескриптивными характеристиками 
+    agg_list = ['sum', 'describe', 'median', 'skew']
+    agg_list.remove('sum')
+    data_group = \
+        data_df.groupby(column_quantitative)[column_qualitative].agg(agg_list)
+    
+    # добавляем в DataFrame дескриптивные характеристики, отсутствующие в agg
+    for row in data_group.index:    
+        # https://en.wikipedia.org/wiki/Median_absolute_deviation
+        data_group.loc[row, 'MAD'] = \
+            sm.robust.scale.mad(\
+                data_df_group_dict[row][column_qualitative], c=1)
+        data_group.loc[row, 'range'] = data_group.loc[row]['describe']['max'] \
+            - data_group.loc[row]['describe']['min']
+        data_group.loc[row, 'IQR'] = data_group.loc[row][('describe', '75%')] \
+            - data_group.loc[row][('describe', '25%')]
+        data_group.loc[row, 'CV'] = data_group.loc[row]['describe']['std'] \
+            / data_group.loc[row]['describe']['mean']
+        data_group.loc[row, 'kurtosis'] = \
+            sps.kurtosis(data_df_group_dict[row][column_qualitative])
+    #display(data_group.style.format(precision=3, thousands=" "))
+
+    # изменяем порядок столбцов в DataFrame
+    current_order_new = [
+        ('describe', 'count'),                
+        ('describe', 'mean'), ('median', 'Balance'),                  
+        ('describe', 'std'), ('MAD', ''),                 
+        ('describe', 'min'), ('describe', '25%'), ('describe', '50%'), 
+        ('describe', '75%'), ('describe', 'max'), 
+        ('range', ''), ('IQR', ''),                  
+        ('CV', ''), ('skew', 'Balance'), ('kurtosis', '')]
+    data_group = data_group.reindex(columns = current_order_new)
+    #display(data_group.style.format(precision=3, thousands=" "))
+
+    # удаляем мультииндекс и изменяем названия столбцов 
+    data_group.columns = data_group.columns.droplevel(0)
+    new_columns_list = ['count', 'mean', 'median', 'std', 'MAD', 'min', \
+        '25%', '50%', '75%', 'max', 'range', 'IQR', 'CV', 'skew', 'kurtosis']
+    data_group.columns = new_columns_list
+        
+    result = data_group
+    return result
 
 
 
 #==============================================================================
-#               ФУНКЦИИ ДЛЯ ПРОВЕРКИ РАЗЛИЧНЫХ ГИПОТЕЗ
+#               3. ФУНКЦИИ ДЛЯ ОЦЕНКИ РАЗЛИЧНЫХ ПАРАМЕТРОВ
+#==============================================================================
+
+#------------------------------------------------------------------------------
+#   Функция confidence_interval_ratio
+#
+#   Возвращает доверительный интервал доли p = m/n в виде списка [p_min, p_max]
+#------------------------------------------------------------------------------
+
+def confidence_interval_ratio(
+    n:          int, 
+    m:          int, 
+    p_level:    float = 0.95, 
+    digit:      int = 4):
+    
+    """
+    Возвращает доверительный интервал доли p = m/n в виде списка [p_min, p_max]
+
+    Args:
+        n (int, optional):            
+            общее число испытаний
+            
+        m (int, optional):            
+            число испытаний, в которых наблюдалось рассматриваемое событие
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95
+            
+        digit (int, optional):        
+            точность выдаваемого результата. 
+            Defaults to 4
+            
+    Returns:
+        [p_min, p_max] (list):
+            доверительный интервал доли
+        
+    """
+    
+    q = m/n
+    k1 = lambda q: log(1/(1-q))
+    k2 = lambda n, m: m / sum([1/(n-i) for i in range(0, m)])
+    
+    if m <= 0.5*n:
+        p_min = round(1-exp(-sps.chi2.ppf(1 - \
+            (1 + p_level)/2, 2*m) / (2*k2(n, m))), digit)
+        p_max = round(1-exp(-sps.chi2.ppf(1 - 
+            (1 - p_level)/2, 2*(m+1)) / (2*k2(n, m+1))), digit)
+    else:
+        p_min = round(exp(-sps.chi2.ppf(1 - \
+            (1 - p_level)/2, 2*(n-m+1))/ (2*k2(n, n-m+1))), digit)
+        p_max = round(exp(-sps.chi2.ppf(1 - \
+            (1 + p_level)/2, 2*(n-m))/ (2*k2(n, n-m))), digit)
+        
+    return [p_min, p_max]
+
+
+
+
+#==============================================================================
+#               4. ФУНКЦИИ ДЛЯ ПРОВЕРКИ РАЗЛИЧНЫХ ГИПОТЕЗ
 #==============================================================================
 
 
 #------------------------------------------------------------------------------
-#   Функция Mann_Whitney_test_trend_check
-#
-#   Проверяет гипотезу о наличии тренда (т.е. существенном различии двух частей
-#   временного ряда) по критерию Манна-Уитни
-#------------------------------------------------------------------------------    
+#   Функция KS_ES_2samp_test
+#   
+#   Функция сравнивает основные распределения двух независимых выборок: 
+#    - по критерию Колмогорова-Смирнова
+#    - по критерию Эппса-Синглтона ES.
+#------------------------------------------------------------------------------
 
-def Mann_Whitney_test_trend_check(
-        data1, data2,    # два части, на которые следует разбить исходный массив значений
-        use_continuity=True,    # поправка на непрерывность
-        alternative='two-sided',    # вид альтернативной гипотезы
-        method='auto',    # метод расчета уровня значимости
-        p_level=0.95,
-        DecPlace=5):
+def KS_ES_2samp_test(
+    data1, data2,
+    alternative:    str = 'two-sided',
+    method:         str = 'auto',    
+    p_level:        float = 0.95):
+    
+    """
+    Функция сравнивает основные распределения F(x) и G(x) двух независимых выборок: 
+        - по критерию Колмогорова-Смирнова KS (только для непрерывных распределений);
+        - по критерию Эппса-Синглтона ES.
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ks_2samp.html#scipy.stats.ks_2samp
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.epps_singleton_2samp.html
+        
+    Args:
+        data1, data2:                       
+            исходные массивы данных. Должны иметь одинаковый размер.
+            
+        alternative (str, optional):        
+            альтернативная гипотеза {‘two-sided’, ‘less’, ‘greater’}.                                            
+            Defaults to ‘two-sided’.
+            
+        method (str, optional):             
+            метод расчета уровня значимости {‘auto’, ‘asymptotic’, ‘exact’}                                             
+            Defaults to ‘auto’.
+            
+        p_level (float, optional):          
+            доверительная вероятность. 
+            Defaults to 0.95.
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """ 
     
     a_level = 1 - p_level
-        
-    result = sps.mannwhitneyu(
-        data1, data2,
-        use_continuity=use_continuity,
-        alternative=alternative,
-        method=method)
-    s_calc = result.statistic    # расчетное значение статистики критерия
-    a_calc = result.pvalue    # расчетный уровень значимости
     
-    print(f"Расчетное значение статистики критерия: s_calc = {round(s_calc, DecPlace)}")
-    print(f"Расчетный уровень значимости: a_calc = {round(a_calc, DecPlace)}")
-    print(f"Заданный уровень значимости: a_level = {round(a_level, DecPlace)}")
-          
-    if a_calc >= a_level:
-        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} >= a_level = {round(a_level, DecPlace)}" + \
-            ", то нулевая гипотеза об отсутствии сдвига в выборках ПРИНИМАЕТСЯ, т.е. сдвиг ОТСУТСТВУЕТ"
-    else:
-        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} < a_level = {round(a_level, DecPlace)}" + \
-            ", то нулевая гипотеза об отсутствии сдвига в выборках ОТКЛОНЯЕТСЯ, т.е. сдвиг ПРИСУТСТВУЕТ"
-    print(conclusion_ShW_test)
-    return    
+    # реализация теста Колмогорова-Смирнова KS
+    test_KS = sps.ks_2samp(
+        data1, data2,
+        alternative = alternative,
+        method = method)
+    s_KS_calc = test_KS.statistic
+    a_KS_calc = test_KS.pvalue
+    conclusion_KS = 'H0: the data were drawn from the same distribution' \
+        if a_KS_calc >= a_level else \
+        'H1: the data were not drawn from the same distribution'
+    
+    # реализация теста Эппса-Синглтона ES
+    test_ES = sps.epps_singleton_2samp(
+        data1, data2)
+    s_ES_calc = test_ES.statistic
+    a_ES_calc = test_ES.pvalue
+    conclusion_ES = 'H0: the data were drawn from the same distribution' \
+        if a_ES_calc >= a_level else \
+        'H1: the data were not drawn from the same distribution'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Kolmogorov-Smirnov test (KS)', 'Epps-Singleton test (ES)'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: the data were drawn from the same distribution'),
+        #'alternative hypothesis': ('H1: the data were not drawn from the same distribution'),
+        'a_calc': (a_KS_calc, a_ES_calc),
+        'a_calc >= a_level': (a_KS_calc >= a_level, a_ES_calc >= a_level),
+        'statistic': (s_KS_calc, s_ES_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion_KS, conclusion_ES),
+    })
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Mann_Whitney_test
+#   
+#   U-критерий Манна-Уитни
+#------------------------------------------------------------------------------
+
+def Mann_Whitney_test(
+    data1, data2,                   
+    use_continuity:    bool = True,    
+    alternative:       str = 'two-sided',
+    method:            str = 'auto',    
+    p_level:           float = 0.95):
+    
+    """
+    Функция выполняет по U-критерий Манна-Уитни непараметрическую проверку 
+    нулевой гипотезы о том, что распределение, лежащее в основе выборки X , 
+    такое же, как распределение, лежащее в основе выборки Y.
+    Его часто используют как тест на разницу в местоположении между 
+    дистрибутивами.
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mannwhitneyu.html#scipy.stats.mannwhitneyu
+        
+    Args:
+        data1, data2:                       
+            исходные массивы данных.
+            
+        use_continuity (bool, optional):    
+            логический параметр: True/False - использовать/не использовать 
+            поправку на непрерывность.                                             
+            Defaults to True.
+            
+        alternative (str, optional):        а
+        льтернативная гипотеза {“two-sided”, “greater”, “less”}.                                            
+        Defaults to ‘two-sided’.
+        
+        method (str, optional):             
+            метод расчета уровня значимости {‘auto’, ‘asymptotic’, ‘exact’}                                                                                      
+            Defaults to ‘auto’.
+        
+        p_level (float, optional):          
+            доверительная вероятность. 
+            Defaults to 0.95
+
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """    
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.mannwhitneyu(
+        data1, data2,
+        use_continuity = use_continuity,
+        alternative = alternative,
+        method = method)
+    s_calc = test.statistic    # расчетное значение статистики критерия
+    a_calc = test.pvalue    # расчетный уровень значимости
+    #hypothesis_check = 'H0' if a_calc >= a_level else 'H1'
+    conclusion = 'H0: The sample distributions are equal' if a_calc >= a_level \
+        else 'H1: The sample distributions are not equal'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Mann-Whitney test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Wilcoxon_test
+#   
+#   Критерий Уилкоксона
+#------------------------------------------------------------------------------
+
+def Wilcoxon_test(
+    data1, data2,
+    zero_method:    str = 'wilcox',                       
+    correction:     bool = True,    
+    alternative:    str = 'two-sided',
+    method:         str = 'auto',    
+    p_level:        float = 0.95):
+    
+    """
+    Функция выполняет проверку нулевую гипотезу о том, что две связанные 
+    парные выборки происходят из одного и того же распределения. 
+    В частности, проверяет, является ли распределение различий симметричным 
+    относительно нуля. Это непараметрическая версия парного Т-теста.
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.wilcoxon.html#scipy.stats.wilcoxon
+        
+    Args:
+        data1, data2:                       
+            исходные массивы данных. Должны иметь одинаковый размер.
+            
+        zero_method (str, optional):        
+            метод обработки пар наблюдений с одинаковыми значениями 
+            («нулевые разности» или «нули»)   
+            {“wilcox”, “pratt”, “zsplit”}      
+            Defaults to “wilcox”.
+            
+        correction (bool, optional):        
+            логический параметр: True/False - использовать/не использовать 
+            поправку на непрерывность.    
+            Defaults to True.
+            
+        alternative (str, optional):        
+            альтернативная гипотеза {‘two-sided’, ‘less’, ‘greater’}.                                            
+            Defaults to ‘two-sided’.
+            
+        method (str, optional):             
+            метод расчета уровня значимости {‘auto’, ‘asymptotic’, ‘exact’}                                          
+            Defaults to ‘auto’.
+            
+        p_level (float, optional):          
+            доверительная вероятность. Defaults to 0.95.
+    
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """    
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.wilcoxon(
+        data1, data2,
+        zero_method = zero_method,                       
+        correction = correction,    
+        alternative = alternative,
+        method = method)
+    s_calc = test.statistic    # расчетное значение статистики критерия
+    a_calc = test.pvalue    # расчетный уровень значимости
+    #hypothesis_check = 'H0' if a_calc >= a_level else 'H1'
+    conclusion = 'H0: The sample distributions are equal' if a_calc >= a_level else 'H1: The sample distributions are not equal'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('wilcoxon test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Kruskal_Wallis_test
+#   
+#   Критерий Краскела-Уоллиса
+#------------------------------------------------------------------------------
+
+def Kruskal_Wallis_test(
+    *samples,
+    p_level:    float = 0.95):
+    
+    """
+    H-тест Краскела-Уоллеса проверяет нулевую гипотезу о том, что медиана 
+    популяции всех групп равна. Это непараметрическая версия ANOVA.
+    Тест работает на двух и более независимых выборках, которые могут иметь 
+    разные размеры.
+    Обратите внимание, что отказ от нулевой гипотезы не указывает на то, 
+    какая из групп отличается.
+    Апостериорные сравнения между группами необходимы, чтобы определить, 
+    какие группы отличаются.
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kruskal.html#scipy.stats.kruskal
+        
+    Args:
+        samples:                      
+            двумерный массив, содержащий исходные выборки.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
+
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """ 
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.kruskal(*samples)
+    s_calc = test.statistic
+    a_calc = test.pvalue
+    conclusion = 'H0: medians of all groups are equal' if a_calc >= a_level else \
+        'H1: at least one population median of one group is different from \
+            the population median of at least one other group'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Kruskal-Wallis test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Ansari_Bradley_test
+#   
+#   Тест Ансари-Бредли - непараметрический тест на равенство параметра 
+#   масштаба распределений, из которых были взяты две выборки. 
+#   H0 утверждает, что отношение масштаба распределения, лежащего в основе x , 
+#   к масштабу распределения, лежащего в основе y, равно 1.
+#------------------------------------------------------------------------------
+
+def Ansari_Bradley_test(
+    data1, data2,                   
+    alternative:    str = 'two-sided',
+    p_level:        float = 0.95):
+    
+    """
+    Функция реализует тест Ансари-Бредли - непараметрический тест на равенство 
+    параметра масштаба распределений, из которых были взяты две выборки. 
+    H0 утверждает, что отношение масштаба распределения, лежащего в основе x, 
+    к масштабу распределения, лежащего в основе y, равно 1.
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ansari.html#scipy-stats-ansari
+        
+    Args:
+        data1, data2:                       
+            исходные массивы данных. Должны иметь одинаковый размер.
+            
+        alternative (str, optional):        
+            альтернативная гипотеза {‘two-sided’, ‘less’, ‘greater’}.                                            
+            Defaults to ‘two-sided’.
+        
+        p_level (float, optional):          
+            доверительная вероятность. 
+            Defaults to 0.95
+
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """    
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.ansari(
+        data1, data2,
+        alternative = alternative)
+    s_calc = test.statistic    # расчетное значение статистики критерия
+    a_calc = test.pvalue    # расчетный уровень значимости
+    #hypothesis_check = 'H0' if a_calc >= a_level else 'H1'
+    conclusion = 'H0: The scales of the distributions are equal' \
+        if a_calc >= a_level else \
+            'H1: The scales of the distributions are not equal'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Ansari-Bradley test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Mood_test
+#   
+#   Тест Муда - непараметрический тест нулевой гипотезы о том, что две выборки 
+#   взяты из одного и того же распределения с одним и тем же параметром шкалы.
+#------------------------------------------------------------------------------
+
+def Mood_test(
+    data1, data2,                   
+    alternative:    str = 'two-sided',
+    p_level:        float = 0.95):
+    
+    """
+    Функция реализует тест Муда - непараметрический тест нулевой гипотезы 
+    о том, что две выборки взяты из одного и того же распределения 
+    с одним и тем же параметром шкалы..
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mood.html#scipy-stats-mood
+        
+    Args:
+        data1, data2:                       
+            исходные массивы данных. Должны иметь одинаковый размер.
+            
+        alternative (str, optional):        
+            альтернативная гипотеза {‘two-sided’, ‘less’, ‘greater’}.                                            
+            Defaults to ‘two-sided’.
+            
+        p_level (float, optional):          
+            доверительная вероятность. 
+            Defaults to 0.95.
+    
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """    
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.mood(
+        data1, data2,
+        alternative = alternative)
+    s_calc = test.statistic    # расчетное значение статистики критерия
+    a_calc = test.pvalue    # расчетный уровень значимости
+    #hypothesis_check = 'H0' if a_calc >= a_level else 'H1'
+    conclusion = 'H0: The samples are drawn from the same distribution with the same scale parameter' \
+        if a_calc >= a_level else \
+            'H1: samples are not drawn from the same distribution with the same scale parameter'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Mood test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Levene_test
+#   
+#   Критерий Левена
+#------------------------------------------------------------------------------
+
+def Levene_test(
+    *samples,
+    center = 'median',
+    p_level: float = 0.95):
+    
+    """
+    Функция реализует тест Левена - проверяет нулевую гипотезу о том, 
+    что все входные выборки взяты из совокупностей с равными дисперсиями. 
+    Тест Левена является альтернативой тесту Бартлетта
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.levene.html#scipy-stats-levene
+        
+    Args:
+        samples:                      
+            двумерный массив, содержащий исходные выборки.
+            
+        center (int, optional):       
+            какую функцию данных использовать в тесте 
+            {‘mean’, ‘median’, ‘trimmed’}.                                      
+            Defaults to ‘median’.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
+
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+            
+    """ 
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.levene(*samples)
+    s_calc = test.statistic
+    a_calc = test.pvalue
+    conclusion = 'H0: The variances of the distributions are equal' \
+        if a_calc >= a_level else \
+        'H1: The variances of the distributions are not equal'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Levene test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Fligner_Killeen_test
+#   
+#   Критерий Флиннера-Киллина
+#------------------------------------------------------------------------------
+
+def Fligner_Killeen_test(
+    *samples,
+    center      = 'median',
+    p_level:    float = 0.95):
+    
+    """
+    Функция реализует тест Флиннера-Киллина - проверяет нулевую гипотезу о том, 
+    что все входные выборки взяты из совокупностей с равными дисперсиями. 
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fligner.html#scipy-stats-fligner
+        
+    Args:
+        samples:                      
+            двумерный массив, содержащий исходные выборки.
+            
+        center (int, optional):       
+            какую функцию данных использовать в тесте 
+            {‘mean’, ‘median’, ‘trimmed’}.      
+            Defaults to ‘median’.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95д
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+    """ 
+    
+    a_level = 1 - p_level
+    
+    # реализация теста
+    test = sps.fligner(*samples)
+    s_calc = test.statistic
+    a_calc = test.pvalue
+    conclusion = 'H0: The variances of the distributions are equal' \
+        if a_calc >= a_level else \
+        'H1: The variances of the distributions are not equal'
+    
+    # DataFrame для сводки результатов    
+    result = pd.DataFrame({
+        'test': ('Fligner-Killeen test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        #'null hypothesis': ('H0: The sample distributions are equal'),
+        #'alternative hypothesis': ('H1: The sample distributions are not equal'),
+        'a_calc': (a_calc),
+        'a_calc >= a_level': (a_calc >= a_level),
+        'statistic': (s_calc),
+        #'critical_value': ('-'),
+        #'statistic <= critical_value': ('-'),
+        #'hypothesis check': (''),
+        'conclusion (accepted hypothesis)': (conclusion),
+        },
+        index=[0])
+    
+    return result
+
 
 
 
@@ -678,384 +1636,116 @@ def Foster_Stuart_test(X, p_level=0.95):
     
 
 #==============================================================================
-#               ФУНКЦИИ ДЛЯ ВИЗУАЛИЗАЦИИ
+#               5. ФУНКЦИИ ДЛЯ ВИЗУАЛИЗАЦИИ
 #==============================================================================    
     
-#------------------------------------------------------------------------------
-#   Функция graph_scatterplot_sns
-#------------------------------------------------------------------------------
-
-def graph_scatterplot_sns(
-    X, Y,
-    Xmin=None, Xmax=None,
-    Ymin=None, Ymax=None,
-    color='orange',
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
-    x_label=None,
-    y_label=None,
-    label_fontsize=14, tick_fontsize=12,
-    label_legend='', label_legend_fontsize=12,
-    s=50,
-    graph_size=(297/INCH, 210/INCH),
-    file_name=None):
-    
-    X = np.array(X)
-    Y = np.array(Y)
-    
-    if not(Xmin) and not(Xmax):
-        Xmin=min(X)*0.99
-        Xmax=max(X)*1.01
-    if not(Ymin) and not(Ymax):
-        Ymin=min(Y)*0.99
-        Ymax=max(Y)*1.01       
-    
-    fig, axes = plt.subplots(figsize=graph_size)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    axes.set_title(title_axes, fontsize = title_axes_fontsize)
-    #data_df = data_XY_df
-    sns.scatterplot(
-        x=X, y=Y,
-        label=label_legend,
-        s=s,
-        palette=['orange'], color=color,
-        ax=axes)
-    axes.set_xlim(Xmin, Xmax)
-    axes.set_ylim(Ymin, Ymax)       
-    axes.axvline(x = 0, color = 'k', linewidth = 1)
-    axes.axhline(y = 0, color = 'k', linewidth = 1)
-    axes.set_xlabel(x_label, fontsize = label_fontsize)
-    axes.set_ylabel(y_label, fontsize = label_fontsize)
-    axes.tick_params(labelsize = tick_fontsize)
-    #axes.tick_params(labelsize = tick_fontsize)
-    axes.legend(prop={'size': label_legend_fontsize})
-        
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return    
-
-
-
-#------------------------------------------------------------------------------
-#   Функция graph_scatterplot_mpl_np
-#------------------------------------------------------------------------------
-
-def graph_plot_mpl_np(
-    X, Y,
-    Xmin_in=None, Xmax_in=None,
-    Ymin_in=None, Ymax_in=None,
-    color='orange',
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
-    x_label=None,
-    y_label=None,
-    label_fontsize=14, tick_fontsize=12,
-    label_legend='', label_legend_fontsize=12,
-    graph_size=(297/INCH, 210/INCH),
-    file_name=None):
-    
-    sns.set_style("whitegrid")    # настройка цветовой гаммы
-    fig, axes = plt.subplots(figsize=graph_size)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    axes.set_title(title_axes, fontsize = title_axes_fontsize)
-    
-    if (Xmin_in != None) and (Xmax_in != None):
-        Xmin=Xmin_in
-        Xmax=Xmax_in
-        axes.set_xlim(Xmin, Xmax)
-            
-    if (Ymin_in != None) and (Ymax_in != None):
-        Ymin=Ymin_in
-        Ymax=Ymax_in
-        axes.set_ylim(Ymin, Ymax)        
-    
-    axes.plot(
-        X, Y,
-        linestyle = "-",
-        color=color,
-        linewidth=3,
-        label=label_legend)
-    axes.set_xlabel(x_label, fontsize = label_fontsize)
-    axes.set_ylabel(y_label, fontsize = label_fontsize)
-    axes.tick_params(labelsize = tick_fontsize)
-    axes.tick_params(labelsize = tick_fontsize)
-    axes.legend(prop={'size': label_legend_fontsize})
-    
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return
-
-
-    
-#------------------------------------------------------------------------------
-#   Функция graph_lineplot_sns_np
-#------------------------------------------------------------------------------
-
-def graph_lineplot_sns(
-    X, Y,
-    Xmin_in=None, Xmax_in=None,
-    Ymin_in=None, Ymax_in=None,
-    color='orange',
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
-    x_label=None,
-    y_label=None,
-    label_fontsize=14, tick_fontsize=12,
-    label_legend='', label_legend_fontsize=12,
-    graph_size=(297/INCH, 210/INCH),
-    file_name=None):
-    
-    sns.set_style("darkgrid")    # настройка цветовой гаммы
-    fig, axes = plt.subplots(figsize=graph_size)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    axes.set_title(title_axes, fontsize = title_axes_fontsize)
-    
-    if (Xmin_in != None) and (Xmax_in != None):
-        Xmin=Xmin_in
-        Xmax=Xmax_in
-        axes.set_xlim(Xmin, Xmax)
-            
-    if (Ymin_in != None) and (Ymax_in != None):
-        Ymin=Ymin_in
-        Ymax=Ymax_in
-        axes.set_ylim(Ymin, Ymax)        
-        
-    sns.lineplot(
-        x=X, y=Y,
-        palette=['orange'], color=color,
-        linewidth=3,
-        legend=True,
-        label=label_legend,
-        ax=axes)
-    axes.set_xlabel(x_label, fontsize = label_fontsize)
-    axes.set_ylabel(y_label, fontsize = label_fontsize)
-    #axes.axvline(x = 0, color = 'k', linewidth = 1)
-    #axes.axhline(y = 0, color = 'k', linewidth = 1)
-    axes.tick_params(labelsize = tick_fontsize)
-    axes.tick_params(labelsize = tick_fontsize)
-    axes.legend(prop={'size': label_legend_fontsize})
-    
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return
-
-
-
-#------------------------------------------------------------------------------
-#   Функция graph_scatterplot_3D_mpl
-#------------------------------------------------------------------------------
-
-def graph_scatterplot_3D_mpl(
-    X, Y, Z,
-    elev=-160, azim=-60,
-    Xmin_in=0, Xmax_in=3000,
-    Ymin_in=-25, Ymax_in=25,
-    Zmin_in=0, Zmax_in=20,
-    color='orange',
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
-    x_label=None,
-    y_label=None,
-    z_label=None,
-    label_fontsize=11, tick_fontsize=10,
-    label_legend='', label_legend_fontsize=12,
-    s=50,
-    graph_size=(420/INCH, 297/INCH),
-    file_name=None):
-    
-    sns.set_style("darkgrid")    # настройка цветовой гаммы
-    fig = plt.figure(figsize=graph_size)
-    axes = fig.add_subplot(111, projection='3d')
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    axes.set_title(title_axes, fontsize = title_axes_fontsize)
-    
-    if (Xmin_in != None) and (Xmax_in != None):
-        Xmin=Xmin_in
-        Xmax=Xmax_in
-        axes.set_xlim(Xmin, Xmax)
-            
-    if (Ymin_in != None) and (Ymax_in != None):
-        Ymin=Ymin_in
-        Ymax=Ymax_in
-        axes.set_ylim(Ymin, Ymax)        
-    
-    if (Zmin_in != None) and (Zmax_in != None):
-        Zmin=Zmin_in
-        Zmax=Zmax_in
-        axes.set_zlim(Zmin, Zmax)  
-    
-    axes.scatter(
-        X, Y, Z,
-        label=label_legend,
-        s=50,
-        color=color)
-    
-    axes.set_xlabel(x_label, fontsize = label_fontsize)
-    axes.set_ylabel(y_label, fontsize = label_fontsize)
-    axes.set_zlabel(z_label, fontsize = label_fontsize)
-    axes.view_init(elev=elev, azim=azim)   
-    #axes.tick_params(labelsize = tick_fontsize)
-    axes.legend(prop={'size': label_legend_fontsize})
-        
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return   
-
-
-
-#------------------------------------------------------------------------------
-#   Функция graph_hist_boxplot_mpl
-#
-#   Принимает в качестве аргумента np.ndarray и строит совмещенный график - 
-#   гистограмму и коробчатую диаграмму на одном рисунке (Figure) - с помощью 
-#    библиотеки Mathplotlib.
-#------------------------------------------------------------------------------    
-    
-
-def graph_hist_boxplot_mpl(
-    X,
-    Xmin=None, Xmax=None,
-    bins_hist='auto',
-    density_hist=False,
-    title_figure=None, title_figure_fontsize=18,
-    title_axes=None, title_axes_fontsize=16,
-    x_label=None,
-    label_fontsize=14, tick_fontsize=12, label_legend_fontsize=10,
-    graph_size=(297/INCH, 210/INCH),
-    file_name=None):
-    
-    X = np.array(X)
-        
-    if not(Xmin) and not(Xmax):
-        Xmin=min(X)*0.99
-        Xmax=max(X)*1.01
-        
-    # создание рисунка (Figure) и области рисования (Axes)
-    fig = plt.figure(figsize=graph_size)
-    ax1 = plt.subplot(2,1,1)    # для гистограммы
-    ax2 = plt.subplot(2,1,2)    # для коробчатой диаграммы  
-    
-    # заголовок рисунка (Figure)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    
-    # заголовок области рисования (Axes)
-    ax1.set_title(title_axes, fontsize = title_axes_fontsize)
-    
-    # выбор вида гистограммы (density=True/False - плотность/абс.частота) и параметры по оси OY
-    ymax = max(np.histogram(X, bins=bins_hist, density=density_hist)[0])
-    if density_hist:
-        label_hist = "эмпирическая плотность распределения"
-        ax1.set_ylabel('Относительная плотность', fontsize = label_fontsize)
-        ax1.set_ylim(0, ymax*1.4)
-    else:
-        label_hist = "эмпирическая частота"
-        ax1.set_ylabel('Абсолютная частота', fontsize = label_fontsize)
-        ax1.set_ylim(0, ymax*1.4)
-
-    # данные для графика плотности распределения
-    nx = 100
-    hx = (Xmax - Xmin)/(nx - 1)
-    x1 = np.linspace(Xmin, Xmax, nx)
-    #hx = 0.1; nx =  int(floor((Xmax - Xmin)/hx)+1)
-    #x1 = np.linspace(Xmin, Xmax, nx)
-    y1 = sps.norm.pdf(x1, X.mean(), X.std(ddof = 1))
-    
-    # рендеринг гистограммы
-    if density_hist:
-        ax1.hist(
-            X,
-            bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
-            density=density_hist,
-            histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-            orientation='vertical',   # 'vertical', 'horizontal'
-            color = "#1f77b4",
-            label=label_hist)
-        ax1.plot(
-            x1, y1,
-            linestyle = "-",
-            color = "r",
-            linewidth = 2,
-            label = 'теоретическая нормальная кривая')
-    else:
-        ax1.hist(
-            X,
-            bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
-            density=density_hist,
-            histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-            orientation='vertical',   # 'vertical', 'horizontal'
-            color = "#1f77b4",
-            label=label_hist)    
-        k = len(np.histogram(X, bins=bins_hist, density=density_hist)[0])
-        y2 = y1*len(X)*(max(X)-min(X))/k
-        ax1.plot(
-            x1, y2,
-            linestyle = "-",
-            color = "r",
-            linewidth = 2,
-            label = 'теоретическая нормальная кривая')
-    
-    # Среднее значение, медиана, мода на графике
-    ax1.axvline(
-        X.mean(),
-        color='magenta', label = 'среднее значение', linewidth = 2)
-    ax1.axvline(
-        np.median(X),
-        color='orange', label = 'медиана', linewidth = 2)
-    ax1.axvline(stat.mode(X),
-        color='cyan', label = 'мода', linewidth = 2)
-    
-    ax1.set_xlim(Xmin, Xmax)
-    ax1.tick_params(labelsize = tick_fontsize)
-    ax1.grid(True)
-    ax1.legend(fontsize = label_legend_fontsize)
-    
-    # рендеринг коробчатой диаграммы
-    ax2.boxplot(
-        X,
-        vert=False,
-        notch=False,
-        widths=0.5,
-        patch_artist=True)
-    ax2.set_xlim(Xmin, Xmax)
-    ax2.set_xlabel(x_label, fontsize = label_fontsize)
-    ax2.tick_params(labelsize = tick_fontsize)
-    ax2.grid(True)
-        
-    # отображение графика на экране и сохранение в файл
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return
-
-
 
 #------------------------------------------------------------------------------
 #   Функция graph_hist_boxplot_probplot_sns
-#   библиотеки Mathplotlib.
+#
+#   Визуализация: строит совмещенный график - 
+#   гистограмму, коробчатую диаграмму и вероятностный график -  
+#   на одном рисунке (Figure)
 #------------------------------------------------------------------------------
 
 def graph_hist_boxplot_probplot_sns(
     data,
-    data_min=None, data_max=None,
-    graph_inclusion='hbp',
-    bins_hist='auto',
-    density_hist=False,
-    type_probplot='pp',
-    title_figure=None, title_figure_fontsize=16,
-    title_axes=None, title_axes_fontsize=14,
-    data_label=None,
-    label_fontsize=13, tick_fontsize=10, label_legend_fontsize=10,
-    graph_size=None,
-    file_name=None):
+    data_min                  = None, 
+    data_max                  = None,
+    graph_inclusion:          str = 'hbp',
+    bins_hist:                str = 'auto',
+    density_hist:             bool = False,
+    type_probplot:            str = 'pp',
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 10,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 14,
+    data_label:               str = None,
+    label_fontsize:           int = 10, 
+    tick_fontsize:            int = 8, 
+    label_legend_fontsize:    int = 10,
+    graph_size:               tuple = None,
+    file_name:                str = None):
+    
+    """
+    Визуализация: строит совмещенный график - 
+    гистограмму, коробчатую диаграмму и вероятностный график - 
+    на одном рисунке (Figure)
+
+    Args:
+        data:                                     
+            исходный массив данных.
+            
+        data_min, data_max (optional):            
+            мин. и макс. значение рассматриваемой величины для отображения 
+            на графиках. 
+            Defaults to None.
+            
+        graph_inclusion (str, optional):          
+            параметр, определяющий набор графиков на одном рисунке (Figure).                                                  
+            Defaults to 'hbp', где:                                                      
+                'h' - hist (гистограмма)                                                      
+                'b' - boxplot (коробчатая диаграмма)                                                      
+                'p' - probplot (вероятностный график)
+                
+        bins_hist (str, optional):                
+            способ определения числа интервалов гистограммы:
+            ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+            # https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html#numpy.histogram_bin_edges                                                  
+            Defaults to 'auto'.
+            
+        density_hist (bool, optional):            
+            вид гистограммы: с относительными/абсолютными частоты (True/False). 
+            Defaults to False.
+            
+        type_probplot (str, optional):            
+            вид вероятностного графика ('pp', 'qq'). 
+            Defaults to 'pp'.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 14.
+        
+        data_label (str, optional):              
+            подпись оси абсцисс. 
+            Defaults to None.
+        
+        label_fontsize (int, optional):           
+            размер шрифта подписи оси абсцисс. 
+            Defaults to 10.
+        
+        tick_fontsize (int, optional):            
+            размер шрифта меток оси абсцисс. 
+            Defaults to 8.
+        
+        label_legend_fontsize (int, optional):    
+            размер шрифта легенды. 
+            Defaults to 10.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to None.
+            
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.    
+            
+    Returns:
+        None
+            
+    """
     
     X = np.array(data)
     Xmin = data_min
@@ -1102,7 +1792,8 @@ def graph_hist_boxplot_probplot_sns(
     if 'h' in graph_inclusion:
         X_mean = X.mean()
         X_std = X.std(ddof = 1)
-        # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+        # выбор числа интервалов 
+        #('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
         bins_hist = bins_hist
         # данные для графика плотности распределения
         nx = 100
@@ -1111,7 +1802,11 @@ def graph_hist_boxplot_probplot_sns(
         xnorm1 = sps.norm.pdf(x1, X_mean, X_std)
         kx = len(np.histogram(X, bins=bins_hist, density=density_hist)[0])
         xnorm2 = xnorm1*len(X)*(max(X)-min(X))/kx
-        # выбор вида гистограммы (density=True/False - плотность/абс.частота) и параметры по оси OY
+        g_kde = sps.gaussian_kde(X)
+        g_kde_values = g_kde(x1)
+        xnorm3 = g_kde_values*len(X)*(max(X)-min(X))/kx
+        # выбор вида гистограммы 
+        # (density=True/False - плотность/абс.частота) и параметры по оси OY
         xmax = max(np.histogram(X, bins=bins_hist, density=density_hist)[0])
         ax1.set_ylim(0, xmax*1.4)
         if density_hist:
@@ -1124,11 +1819,12 @@ def graph_hist_boxplot_probplot_sns(
         if density_hist:
             ax1.hist(
                 X,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,
                 density=density_hist,
                 histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                orientation='vertical',
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)
             ax1.plot(
                 x1, xnorm1,
@@ -1136,14 +1832,20 @@ def graph_hist_boxplot_probplot_sns(
                 color = "r",
                 linewidth = 2,
                 label = 'theoretical normal curve')
+            sns.kdeplot(
+                data = X,
+                color = 'magenta',
+                label = 'KDE',
+                ax=ax1)
         else:
             ax1.hist(
                 X,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,
                 density=density_hist,
                 histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                orientation='vertical',
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)    
             ax1.plot(
                 x1, xnorm2,
@@ -1151,19 +1853,26 @@ def graph_hist_boxplot_probplot_sns(
                 color = "r",
                 linewidth = 2,
                 label = 'theoretical normal curve')
+            ax1.plot(
+                x1, xnorm3,
+                linestyle = "-",
+                color = "magenta",
+                #linewidth = 2,
+                label = 'KDE')
         ax1.axvline(
             X_mean,
-            color='magenta', label = 'mean', linewidth = 2)
+            color='cyan', label = 'mean', linewidth = 2)
         ax1.axvline(
             np.median(X),
             color='orange', label = 'median', linewidth = 2)
         ax1.axvline(stat.mode(X),
-            color='cyan', label = 'mode', linewidth = 2)
+            color='green', label = 'mode', linewidth = 2)
         ax1.set_xlim(Xmin, Xmax)
         ax1.legend(fontsize = label_legend_fontsize)
         ax1.tick_params(labelsize = tick_fontsize)
         if (graph_inclusion == 'h') or (graph_inclusion == 'hp'):
             ax1.set_xlabel(data_label, fontsize = label_fontsize)
+        ax1.grid()
             
     # коробчатая диаграмма
     if 'b' in graph_inclusion:
@@ -1172,15 +1881,19 @@ def graph_hist_boxplot_probplot_sns(
             orient='h',
             width=0.3,
             #color = "#1f77b4",
-            ax = ax1 if (graph_inclusion == 'b') or (graph_inclusion == 'bp') else ax2)
+            color = list(sns.color_palette("husl", 9))[6],
+            ax = ax1 if ((graph_inclusion == 'b') or 
+                         (graph_inclusion == 'bp')) else ax2)
         if (graph_inclusion == 'b') or (graph_inclusion == 'bp'):
             ax1.set_xlim(Xmin, Xmax)
             ax1.set_xlabel(data_label, fontsize = label_fontsize)
             ax1.tick_params(labelsize = tick_fontsize)
+            ax1.yaxis.grid()
         else:
             ax2.set_xlim(Xmin, Xmax)
             ax2.set_xlabel(data_label, fontsize = label_fontsize)
             ax2.tick_params(labelsize = tick_fontsize)
+            ax2.yaxis.grid()
     
     # вероятностный график
     gofplot = sm.ProbPlot(
@@ -1192,14 +1905,18 @@ def graph_hist_boxplot_probplot_sns(
             gofplot.ppplot(
                 line="45",
                 #color = "blue",
-                ax = ax1 if (graph_inclusion == 'p') else ax3 if (graph_inclusion == 'hbp') else ax2)
+                color = list(sns.color_palette("husl", 9))[6],
+                ax = ax1 if (graph_inclusion == 'p') 
+                    else ax3 if (graph_inclusion == 'hbp') else ax2)
             boxplot_xlabel = 'Theoretical probabilities'
             boxplot_ylabel = 'Sample probabilities'
         elif type_probplot == 'qq':
             gofplot.qqplot(
                 line="45",
                 #color = "blue",
-                ax = ax1 if (graph_inclusion == 'p') else ax3 if (graph_inclusion == 'hbp') else ax2)
+                color = list(sns.color_palette("husl", 9))[6],
+                ax = ax1 if (graph_inclusion == 'p') 
+                    else ax3 if (graph_inclusion == 'hbp') else ax2)
             boxplot_xlabel = 'Theoretical quantilies'
             boxplot_ylabel = 'Sample quantilies'
         boxplot_legend = ['data', 'normal distribution']
@@ -1208,45 +1925,143 @@ def graph_hist_boxplot_probplot_sns(
             ax1.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax1.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax1.tick_params(labelsize = tick_fontsize)
+            ax1.grid()
         elif (graph_inclusion == 'hbp'):
             ax3.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax3.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax3.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax3.tick_params(labelsize = tick_fontsize)
+            ax3.grid()
         else:
             ax2.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax2.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax2.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax2.tick_params(labelsize = tick_fontsize)
+            ax2.grid()
             
     plt.show()
     if file_name:
         fig.savefig(file_name, orientation = "portrait", dpi = 300)
         
-    return    
+    return
 
 
 
 #------------------------------------------------------------------------------
 #   Функция graph_hist_boxplot_probplot_XY_sns
-#   библиотеки Mathplotlib.
+#   Визуализация: строит совмещенный график - 
+#   гистограмму, коробчатую диаграмму и вероятностный график -  
+#   на одном рисунке (Figure) для двух переменных (X и Y)
 #------------------------------------------------------------------------------
 
 def graph_hist_boxplot_probplot_XY_sns(
-    data_X, data_Y,
-    data_X_min=None, data_X_max=None,
-    data_Y_min=None, data_Y_max=None,
-    graph_inclusion='hbp',
-    bins_hist='auto',
-    density_hist=False,
-    type_probplot='pp',
-    title_figure=None, title_figure_fontsize=16,
-    x_title='X', y_title='Y', title_axes_fontsize=14,
-    data_X_label=None,
-    data_Y_label=None,
-    label_fontsize=13, tick_fontsize=10, label_legend_fontsize=10,
-    graph_size=None,
-    file_name=None):
+    data_X, 
+    data_Y,
+    data_X_min                = None, 
+    data_X_max                = None,
+    data_Y_min                = None, 
+    data_Y_max                = None,
+    graph_inclusion:          str='hbp',
+    bins_hist:                str = 'auto',
+    density_hist:             bool = False,
+    type_probplot:            str = 'pp',
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 14,
+    x_title:                  str='X', 
+    y_title:                  str='Y', 
+    title_axes_fontsize:      int = 12,
+    data_X_label:             str = None,
+    data_Y_label:             str = None,
+    label_fontsize:           int = 10, 
+    tick_fontsize:            int = 8, 
+    label_legend_fontsize:    int = 10,
+    graph_size:               tuple = (297/INCH, 210/INCH*1.5),
+    file_name:                str = None):
+    
+    """
+    Визуализация: строит совмещенный график - 
+    гистограмму, коробчатую диаграмму и вероятностный график - 
+    для двух переменных (X и Y) на одном рисунке (Figure)
+
+    Args:
+        data_X, data_Y:                                     
+            исходные массивы данных (переменные X и Y).
+            
+        data_X_min, data_X_max (optional):            
+            мин. и макс. значение рассматриваемой величины для отображения 
+            на графиках (переменная X). 
+            Defaults to None.
+            
+        data_Y_min, data_Y_max (optional):            
+            мин. и макс. значение рассматриваемой величины для отображения 
+            на графиках (переменная Y). 
+            Defaults to None.
+            
+        graph_inclusion (str, optional):          
+            параметр, определяющий набор графиков на одном рисунке (Figure).                                                  
+            Defaults to 'hbp', где:                                                      
+                'h' - hist (гистограмма)                                                      
+                'b' - boxplot (коробчатая диаграмма)                                                      
+                'p' - probplot (вероятностный график)
+                
+        bins_hist (str, optional):                
+            способ определения числа интервалов гистограммы:
+            ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+            # https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html#numpy.histogram_bin_edges                                                  
+            Defaults to 'auto'.
+            
+        density_hist (bool, optional):            
+            вид гистограммы: с относительными/абсолютными частоты (True/False). 
+            Defaults to False.
+            
+        type_probplot (str, optional):            
+            вид вероятностного графика ('pp', 'qq'). 
+            Defaults to 'pp'.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 14.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 12.
+        
+        data_X_label, data_Y_label (str, optional):              
+            подписи оси абсцисс (переменные X и Y).
+            Defaults to None.
+        
+        label_fontsize (int, optional):           
+            размер шрифта подписи оси абсцисс. 
+            Defaults to 10.
+        
+        tick_fontsize (int, optional):            
+            размер шрифта меток оси абсцисс. 
+            Defaults to 8.
+        
+        label_legend_fontsize (int, optional):    
+            размер шрифта легенды. 
+            Defaults to 10.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH).
+            
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.    
+            
+    Returns:
+        None
+            
+    """    
     
     X = np.array(data_X)
     Xmin = data_X_min
@@ -1306,7 +2121,8 @@ def graph_hist_boxplot_probplot_XY_sns(
     if 'h' in graph_inclusion:
         X_mean = X.mean()
         X_std = X.std(ddof = 1)
-        # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+        # выбор числа интервалов 
+        # ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
         bins_hist = bins_hist
         # данные для графика плотности распределения
         nx = 100
@@ -1315,65 +2131,91 @@ def graph_hist_boxplot_probplot_XY_sns(
         xnorm1 = sps.norm.pdf(x1, X_mean, X_std)
         kx = len(np.histogram(X, bins=bins_hist, density=density_hist)[0])
         xnorm2 = xnorm1*len(X)*(max(X)-min(X))/kx
-        # выбор вида гистограммы (density=True/False - плотность/абс.частота) и параметры по оси OY
+        g_kde_x = sps.gaussian_kde(X)
+        g_kde_x_values = g_kde_x(x1)
+        xnorm3 = g_kde_x_values*len(X)*(max(X)-min(X))/kx
+        # выбор вида гистограммы 
+        # (density=True/False - плотность/абс.частота) и параметры по оси OY
         xmax = max(np.histogram(X, bins=bins_hist, density=density_hist)[0])
         ax1.set_ylim(0, xmax*1.4)
         if density_hist:
-            label_hist = "эмпирическая плотность распределения"
-            ax1.set_ylabel('Относительная плотность', fontsize = label_fontsize)
+            label_hist = "empirical density of distribution"
+            ax1.set_ylabel('Relative density', fontsize = label_fontsize)
         else:
-            label_hist = "эмпирическая частота"
-            ax1.set_ylabel('Абсолютная частота', fontsize = label_fontsize)
+            label_hist = "empirical frequency"
+            ax1.set_ylabel('Absolute frequency', fontsize = label_fontsize)
         # рендеринг графика
         if density_hist:
             ax1.hist(
                 X,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
+                # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,    
                 density=density_hist,
-                histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                # 'bar', 'barstacked', 'step', 'stepfilled'
+                histtype='bar',    
+                # 'vertical', 'horizontal'
+                orientation='vertical',   
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)
             ax1.plot(
                 x1, xnorm1,
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
+            sns.kdeplot(
+                data = X,
+                color = 'magenta',
+                label = 'KDE',
+                ax=ax1)
         else:
             ax1.hist(
                 X,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+                # выбор числа интервалов 
+                # ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,    
                 density=density_hist,
-                histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                # 'bar', 'barstacked', 'step', 'stepfilled'
+                histtype='bar',    
+                # 'vertical', 'horizontal'
+                orientation='vertical',   
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)    
             ax1.plot(
                 x1, xnorm2,
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
+            ax1.plot(
+                x1, xnorm3,
+                linestyle = "-",
+                color = "magenta",
+                #linewidth = 2,
+                label = 'KDE')
         ax1.axvline(
             X_mean,
-            color='magenta', label = 'среднее значение', linewidth = 2)
+            color='cyan', label = 'mean', linewidth = 2)
         ax1.axvline(
             np.median(X),
-            color='orange', label = 'медиана', linewidth = 2)
+            color='orange', label = 'median', linewidth = 2)
         ax1.axvline(stat.mode(X),
-            color='cyan', label = 'мода', linewidth = 2)
+            color='green', label = 'mode', linewidth = 2)
         ax1.set_xlim(Xmin, Xmax)
         ax1.legend(fontsize = label_legend_fontsize)
         ax1.tick_params(labelsize = tick_fontsize)
         if (graph_inclusion == 'h') or (graph_inclusion == 'hp'):
             ax1.set_xlabel(data_X_label, fontsize = label_fontsize)
+        ax1.grid()
 
 # гистограмма (hist) Y
     if 'h' in graph_inclusion:
         Y_mean = Y.mean()
         Y_std = Y.std(ddof = 1)
-        # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+        # выбор числа интервалов 
+        #('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
         bins_hist = bins_hist
         # данные для графика плотности распределения
         ny = 100
@@ -1382,59 +2224,77 @@ def graph_hist_boxplot_probplot_XY_sns(
         ynorm1 = sps.norm.pdf(y1, Y_mean, Y_std)
         ky = len(np.histogram(Y, bins=bins_hist, density=density_hist)[0])
         ynorm2 = ynorm1*len(Y)*(max(Y)-min(Y))/ky
-        # выбор вида гистограммы (density=True/False - плотность/абс.частота) и параметры по оси OY
+        g_kde_y = sps.gaussian_kde(Y)
+        g_kde_y_values = g_kde_y(y1)
+        ynorm3 = g_kde_y_values*len(Y)*(max(Y)-min(Y))/ky
+        # выбор вида гистограммы 
+        # (density=True/False - плотность/абс.частота) и параметры по оси OY
         ymax = max(np.histogram(Y, bins=bins_hist, density=density_hist)[0])
         ax2.set_ylim(0, ymax*1.4)
         if density_hist:
-            label_hist = "эмпирическая плотность распределения"
-            ax2.set_ylabel('Относительная плотность', fontsize = label_fontsize)
+            label_hist = "empirical density of distribution"
+            ax2.set_ylabel('Relative density', fontsize = label_fontsize)
         else:
-            label_hist = "эмпирическая частота"
-            ax2.set_ylabel('Абсолютная частота', fontsize = label_fontsize)
+            label_hist = "empirical frequency"
+            ax2.set_ylabel('Absolute frequency', fontsize = label_fontsize)
         # рендеринг графика
         if density_hist:
             ax2.hist(
                 Y,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,
                 density=density_hist,
-                histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                histtype='bar',
+                orientation='vertical',
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)
             ax2.plot(
                 y1, ynorm1,
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
+            sns.kdeplot(
+                data = Y,
+                color = 'magenta',
+                label = 'KDE',
+                ax=ax2)
         else:
             ax2.hist(
                 Y,
-                bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+                bins=bins_hist,
                 density=density_hist,
-                histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
-                orientation='vertical',   # 'vertical', 'horizontal'
-                color = "#1f77b4",
+                histtype='bar',
+                orientation='vertical',
+                #color = "#1f77b4",
+                color = list(sns.color_palette("husl", 9))[6],
                 label=label_hist)    
             ax2.plot(
                 y1, ynorm2,
                 linestyle = "-",
                 color = "r",
                 linewidth = 2,
-                label = 'теоретическая нормальная кривая')
+                label = 'theoretical normal curve')
+            ax2.plot(
+                y1, ynorm3,
+                linestyle = "-",
+                color = "magenta",
+                #linewidth = 2,
+                label = 'KDE')
         ax2.axvline(
             Y_mean,
-            color='magenta', label = 'среднее значение', linewidth = 2)
+            color='cyan', label = 'mean', linewidth = 2)
         ax2.axvline(
             np.median(Y),
-            color='orange', label = 'медиана', linewidth = 2)
+            color='orange', label = 'median', linewidth = 2)
         ax2.axvline(stat.mode(Y),
-            color='cyan', label = 'мода', linewidth = 2)
+            color='green', label = 'mode', linewidth = 2)
         ax2.set_xlim(Ymin, Ymax)
         ax2.legend(fontsize = label_legend_fontsize)
         ax2.tick_params(labelsize = tick_fontsize)
         if (graph_inclusion == 'h') or (graph_inclusion == 'hp'):
             ax2.set_xlabel(data_Y_label, fontsize = label_fontsize)
+        ax2.grid()
         
     # коробчатая диаграмма X
     if 'b' in graph_inclusion:
@@ -1448,10 +2308,12 @@ def graph_hist_boxplot_probplot_XY_sns(
             ax1.set_xlabel(data_X_label, fontsize = label_fontsize)
             ax1.tick_params(labelsize = tick_fontsize)
             ax1.set_xlabel(data_X_label, fontsize = label_fontsize)
+            ax1.xaxis.grid()
         else:
             ax3.set_xlim(Xmin, Xmax)
             ax3.set_xlabel(data_X_label, fontsize = label_fontsize)
             ax3.tick_params(labelsize = tick_fontsize)
+            ax3.xaxis.grid()
             
     # коробчатая диаграмма Y
     if 'b' in graph_inclusion:
@@ -1459,16 +2321,19 @@ def graph_hist_boxplot_probplot_XY_sns(
             x=Y,
             orient='h',
             width=0.3,
-            ax = ax2 if (graph_inclusion == 'b') or (graph_inclusion == 'bp') else ax4)
+            ax = ax2 if ((graph_inclusion == 'b') or 
+                         (graph_inclusion == 'bp')) else ax4)
         if (graph_inclusion == 'b') or (graph_inclusion == 'bp'):
             ax2.set_xlim(Ymin, Ymax)
             ax2.set_xlabel(data_Y_label, fontsize = label_fontsize)
             ax2.tick_params(labelsize = tick_fontsize)
             ax2.set_xlabel(data_Y_label, fontsize = label_fontsize)
+            ax2.xaxis.grid()
         else:
             ax4.set_xlim(Ymin, Ymax)
             ax4.set_xlabel(data_Y_label, fontsize = label_fontsize)
-            ax4.tick_params(labelsize = tick_fontsize)            
+            ax4.tick_params(labelsize = tick_fontsize)     
+            ax4.xaxis.grid()
     
     # вероятностный график X
     gofplot = sm.ProbPlot(
@@ -1479,31 +2344,36 @@ def graph_hist_boxplot_probplot_XY_sns(
         if type_probplot == 'pp':
             gofplot.ppplot(
                 line="45",
-                ax = ax1 if (graph_inclusion == 'p') else ax5 if (graph_inclusion == 'hbp') else ax3)
+                ax = ax1 if (graph_inclusion == 'p') else \
+                    ax5 if (graph_inclusion == 'hbp') else ax3)
             boxplot_xlabel = 'Theoretical probabilities'
             boxplot_ylabel = 'Sample probabilities'
         elif type_probplot == 'qq':
             gofplot.qqplot(
                 line="45",
-                ax = ax1 if (graph_inclusion == 'p') else ax5 if (graph_inclusion == 'hbp') else ax3)
+                ax = ax1 if (graph_inclusion == 'p') else \
+                    ax5 if (graph_inclusion == 'hbp') else ax3)
             boxplot_xlabel = 'Theoretical quantilies'
             boxplot_ylabel = 'Sample quantilies'
-        boxplot_legend = ['эмпирические данные', 'нормальное распределение']
+        boxplot_legend = ['empirical data', 'normal distribution']
         if (graph_inclusion == 'p'):
             ax1.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax1.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax1.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax1.tick_params(labelsize = tick_fontsize)
+            ax1.grid()
         elif (graph_inclusion == 'hbp'):
             ax5.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax5.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax5.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax5.tick_params(labelsize = tick_fontsize)
+            ax5.grid()
         else:
             ax3.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax3.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax3.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax3.tick_params(labelsize = tick_fontsize)
+            ax3.grid()
             
     # вероятностный график Y
     gofplot = sm.ProbPlot(
@@ -1514,27 +2384,32 @@ def graph_hist_boxplot_probplot_XY_sns(
         if type_probplot == 'pp':
             gofplot.ppplot(
                 line="45",
-                ax = ax2 if (graph_inclusion == 'p') else ax6 if (graph_inclusion == 'hbp') else ax4)
+                ax = ax2 if (graph_inclusion == 'p') else \
+                    ax6 if (graph_inclusion == 'hbp') else ax4)
         elif type_probplot == 'qq':
             gofplot.qqplot(
                 line="45",
-                ax = ax2 if (graph_inclusion == 'p') else ax6 if (graph_inclusion == 'hbp') else ax4)
-        boxplot_legend = ['эмпирические данные', 'нормальное распределение']
+                ax = ax2 if (graph_inclusion == 'p') else \
+                    ax6 if (graph_inclusion == 'hbp') else ax4)
+        boxplot_legend = ['empirical data', 'normal distribution']
         if (graph_inclusion == 'p'):
             ax2.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax2.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax2.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax2.tick_params(labelsize = tick_fontsize)
+            ax2.grid()
         elif (graph_inclusion == 'hbp'):
             ax6.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax6.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax6.legend(boxplot_legend, fontsize = label_legend_fontsize)        
             ax6.tick_params(labelsize = tick_fontsize)
+            ax6.grid()
         else:
             ax4.set_xlabel(boxplot_xlabel, fontsize = label_fontsize)
             ax4.set_ylabel(boxplot_ylabel, fontsize = label_fontsize)
             ax4.legend(boxplot_legend, fontsize = label_legend_fontsize)        
-            ax4.tick_params(labelsize = tick_fontsize)            
+            ax4.tick_params(labelsize = tick_fontsize) 
+            ax4.grid()
             
     plt.show()
     if file_name:
@@ -1546,63 +2421,140 @@ def graph_hist_boxplot_probplot_XY_sns(
 
 #------------------------------------------------------------------------------
 #   Функция graph_ecdf_cdf_mpl
+#
+#   Визуализация: строит совмещенный график - 
+#   эмпирическую (ecdf) и теоретическую нормальную (cdf) функцию распределения.
 #------------------------------------------------------------------------------
 
 def graph_ecdf_cdf_mpl(
-    X,
-    Xmin=None, Xmax=None,
-    title_figure=None,
-    title_axes=None,
-    x_label=None,
-    graph_size=(210/INCH, 297/INCH/2),
-    file_name=None):
+    data,
+    data_min                  = None, 
+    data_max                  = None,
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 10,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 14,
+    data_label:               str = None,
+    label_fontsize:           int = 10, 
+    tick_fontsize:            int = 8, 
+    legend_fontsize:          int = 10,
+    linewidth_ecdf:           int = 2,
+    linewidth_cdf:            int = 2,
+    graph_size:               tuple = (210/INCH, 297/INCH/2),
+    file_name:                str = None):
     
-    X = np.array(X)
+    """
+    Визуализация: строит совмещенный график - 
+    эмпирическую (ecdf) и теоретическую нормальную (cdf) функцию распределения.
+
+    Args:
+        data:                                     
+            исходный массив данных.
+        
+        data__min, data__max (optional):          
+            мин. и макс. значение рассматриваемой величины для отображения 
+            на графиках. 
+            Defaults to None.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+        
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.            
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+            
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 14.
+            
+        data_label (str, optional):              
+            подпись оси абсцисс. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):           
+            размер шрифта подписи оси абсцисс. 
+            Defaults to 10.
+            
+        tick_fontsize (int, optional):            
+            размер шрифта меток оси абсцисс. 
+            Defaults to 8.
+            
+        legend_fontsize (int, optional):    
+            размер шрифта легенды. Defaults to 10.
+            
+        linewidth_ecdf (int, optional):           
+            толщина линии графика эмпирической функции распределения. 
+            Defaults to 2.
+            
+        linewidth_cdf (int, optional):            
+            толщина линии графика теоретической функции распределения. 
+            Defaults to 2.
+            
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм
+                
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+            
+    """
     
-    if not(Xmin) and not(Xmax):
-        Xmin=min(X)*0.99
-        Xmax=max(X)*1.01
+    data = np.array(data)
+    
+    if not(data_min) and not(data_max):
+        data_min = min(data_)*0.99
+        data_max = max(data_)*1.01
     
     # создание рисунка (Figure) и области рисования (Axes)
     fig = plt.figure(figsize=graph_size)
     ax = plt.subplot(2,1,1)    # для гистограммы
         
     # заголовок рисунка (Figure)
-    fig.suptitle(title_figure, fontsize = f_size+6)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
     
     # заголовок области рисования (Axes)
-    ax.set_title(title_axes)
+    ax.set_title(title_axes, fontsize = title_axes_fontsize)
     
     # эмпирическая функция распределения
     from statsmodels.distributions.empirical_distribution import ECDF
-    x1 = np.array(X)
+    x1 = np.array(data)
     ecdf = ECDF(x1)
     x1.sort()
     y1 = ecdf(x1)
         
     # теоретическая функция распределения
-    hx = 0.1; nx = floor((Xmax - Xmin)/hx)+1
-    x2 = np.linspace(Xmin, Xmax, nx)
-    y2 = sps.norm.cdf(x2, X.mean(), X.std(ddof = 1))
+    hx = 0.1; nx = floor((data_max - data_min)/hx)+1
+    x2 = np.linspace(data_min, data_max, nx)
+    y2 = sps.norm.cdf(x2, data.mean(), data.std(ddof = 1))
     
     # рендеринг эмпирической функции распределения
     ax.step(x1, y1,
             where='post',
-            label = 'эмпирическая функция распределения')
+            linewidth = linewidth_ecdf,
+            label = 'empirical distribution function')
     
     # рендеринг теоретической функции распределения
     ax.plot(
        x2, y2,
        linestyle = "-",
        color = "r",
-       linewidth = 2,
-       label = 'теоретическая функция нормального распределения')
+       linewidth = linewidth_cdf,
+       label = 'theoretical normal distribution function')
     
-    ax.set_xlim(Xmin, Xmax)
+    ax.set_xlim(data_min, data_max)
     ax.set_ylim(0, 1.1)
-    ax.set_xlabel(x_label)
+    ax.set_xlabel(data_label, fontsize = label_fontsize)
+    
     ax.grid(True)
-    ax.legend(fontsize = 12)
+    ax.legend(fontsize = legend_fontsize)
+    ax.tick_params(labelsize = tick_fontsize)
     
     # отображение графика на экране и сохранение в файл
     plt.show()
@@ -1610,6 +2562,1150 @@ def graph_ecdf_cdf_mpl(
         fig.savefig(file_name, orientation = "portrait", dpi = 300)
         
     return    
+
+    
+
+#------------------------------------------------------------------------------
+#   Функция graph_lorenz_curve
+#   
+#   Визуализация: строит график кривой Лоренца
+#------------------------------------------------------------------------------
+
+def graph_lorenz_curve(
+    data,
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 14,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 12,
+    x_label:                  str = None, 
+    y_label:                  str = None,
+    label_fontsize:           int = 10, 
+    tick_fontsize:            int = 8,
+    label_legend_fontsize:    int = 10,
+    label_text_fontsize:      int = 10,
+    graph_size:               tuple = (210/INCH, 297/INCH/2),
+    file_name:                str = None):
+    
+    """
+    Визуализация: строит график кривой Лоренца.
+
+    Args:
+        data:                                     
+            исходный массив данных.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 14.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 12.
+            
+        x_label, y_label (str, optional):         
+            подписи осей абсцисс и ординат. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):           
+            размер шрифта подписей осей. 
+            Defaults to 10.
+            
+        tick_fontsize (int, optional):            
+            размер шрифта меток осей. 
+            Defaults to 8.
+            
+        label_legend_fontsize (int, optional):    
+            размер шрифта легенды. 
+            Defaults to 8.
+            
+        label_text_fontsize (int, optional):      
+            размер шрифта текста на поле. 
+            Defaults to 10.
+            
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм.
+                
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.   
+
+    Returns:
+        None
+        
+    """
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    # в случае простого графика области Figure и Axes совпадают
+    fig, ax = plt.subplots(figsize = graph_size)
+    
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+
+    # заголовок области рисования (Axes)
+    ax.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    # исходные данные
+    #--------------------
+    
+    #№ данные для графика кривой Лоренца
+    data = np.array(sorted(data))
+        
+    Y_cum = data.cumsum() / data.sum()
+    Y_cum = np.insert(Y_cum, 0, 0)
+        
+    X_cum = np.arange(Y_cum.size) / (Y_cum.size-1)
+        
+    # расчет коэффициента Джини
+    G_list = list((X_cum[i] - X_cum[i-1]) * (Y_cum[i] + Y_cum[i-1]) 
+                  for i in range(1,len(Y_cum)))
+    G = abs(1 - sum(G_list))
+        
+    # рендеринг диаграммы
+    #--------------------
+    
+    ## кривая Лоренца (line plot of Lorenz curve)
+    ax.plot(
+        X_cum, Y_cum,
+        color = 'blue',
+        label='кривая Лоренца')
+    
+    ## линия абсолютного равенства (line plot of equality)
+    ax.plot(
+        [0,1], [0,1],
+        color = 'black',
+        label='линия абсолютного равенства')
+    
+    ## область неравенства
+    ax.fill_between(
+        x=np.insert(X_cum,0,0),
+        y1=np.insert(X_cum,0,0),
+        y2=np.insert(Y_cum,0,0),
+        color='lightblue',
+        label='область неравенства')
+    
+    ## значение коэффициента Джини
+    plt.text(0.1,0.7,'Коэффициент Джини G = {:0.3f}'.format(G), \
+             fontsize = label_text_fontsize)
+    
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.grid()
+    ax.legend(fontsize = label_legend_fontsize)
+    ax.set_xlabel(x_label, fontsize = label_fontsize)
+    ax.set_ylabel(y_label, fontsize = label_fontsize)
+    ax.tick_params(labelsize = tick_fontsize)
+           
+    # отображение графика на экране и сохранение в файл
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_df_heatmap
+#   
+#   Визуализация матрицы корреляционных связей между признаками датасета 
+#   (числовыми и категориальными) с помощью тепловой карты (heatmap).
+#------------------------------------------------------------------------------
+
+def graph_df_heatmap(
+    data_df_in:                  pd.core.frame.DataFrame,
+    data_df_clone:               pd.core.frame.DataFrame = None,
+    cols_to_exclude:             list = None,
+    column_to_aggregate:         str = None,
+    corr_method_qualitative:     str = 'spearman',    
+    corr_method_quantitative:    str = 'cramer',      
+    DecPlace:                    int = 3,
+    title_figure:                str = None, 
+    title_figure_fontsize:       int = 12,
+    title_axes:                  str = None, 
+    title_axes_fontsize:         int = 16,
+    label_fontsize:              int = 13, 
+    tick_fontsize:               int = 10, 
+    label_legend_fontsize:       int = 10,
+    colormap                     = 'Reds',
+    lower_half:                  bool = False,
+    corr_table_output:           bool = True,
+    graph_size:                  tuple = (297/INCH/2, 210/INCH/2),
+    file_name:                   str = None):
+    
+    """
+    Визуализация матрицы корреляционных связей между признаками датасета 
+    (числовыми и категориальными) с помощью тепловой карты (heatmap).
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame):              
+            исходный датасет.
+            
+        data_df_clone (pd.core.frame.DataFrame, optional):    
+            датасет-клон, в котором числовые признаки заменены на 
+            категориальные.
+            Defaults to None.
+                                                                  
+        cols_to_exclude (list, optional):                       
+            список-исключение признаков, которые не участвуют в формировании
+            корреляционной матрицы.                                                                                
+            
+            Defaults to None.
+        
+        column_to_aggregate (str, optional):                        
+            признак датасета, который используется для агрегирования 
+            числовых данных.                                                                                
+            Defaults to None.
+            
+        corr_method_qualitative (str, optional):                        
+            показатель для оценки тесноты связи между числовыми признаками:                                                                                
+            {'spearman', 'kendall'}                                                                                
+            Defaults to 'spearman'.
+            
+        corr_method_quantitative (str, optional):                        
+            показатель для оценки тесноты связи между категориальными 
+            признаками:                                                                                
+            {'cramer', 'tschuprow', 'pearson'}                                                                                
+            Defaults to 'cramer'.
+        
+        DecPlace (int, optional):        
+            точность (число знаков дробной части) при выводе коэффициентов.
+            Defaults to 3.
+                
+        title_figure (str, optional):                 
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):       
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 12.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 16.
+            
+        label_fontsize (int, optional):              
+            размер шрифта подписей осей.
+            Defaults to 13.
+            
+        tick_fontsize (int, optional):               
+            размер шрифта меток. 
+            Defaults to 10.
+            
+        label_legend_fontsize (int, optional):       
+            размер шрифта легенды. 
+            Defaults to 10.
+            
+        colormap (optional):                          
+            цветовая палитра.
+            Defaults to 'Reds'.         
+                    
+        lower_half (bool, optional):
+            логический параметр: True/False - показывать/не показывать нижнюю 
+            половину корреляционной марицы.
+            Defaults to False.
+            
+        corr_table_output (bool, optional):
+            логический параметр: True/False - выводить/не выводить 
+            корреляционную марицу.
+            Defaults to True. 
+            
+        graph_size (tuple, optional):
+            размер графика в дюймах. 
+            Defaults to (420/INCH*1.4, 297/INCH), 
+                где константа INCH = 25.4 мм/дюйм.
+                
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+    
+    Returns:
+        result (pd.core.frame.DataFrame, optional):
+            результат (корреляционная матрица).
+            
+    """
+    
+        # особенность аргумента по умолчанию, который является списком (list)
+    cols_to_exclude = cols_to_exclude or []
+    
+    # формируем рабочий датасет - исключаем столбцы
+    data_df_exclude = data_df_in.drop(columns = cols_to_exclude)
+        
+    # типы столбцов в датасете
+    data_df_exclude_dtypes_series = data_df_exclude.dtypes
+        
+    # формируем копию датасета, в котором количественные признаки 
+    # трансформированы в качественные
+    data_df = data_df_exclude.copy()
+            
+    # формируем корреляционную матрицу
+    variable_list = list(data_df.columns)
+    variable_list.remove(column_to_aggregate)
+        
+    corr_matrix = np.eye(len(variable_list))
+    corr_matrix_df = pd.DataFrame(corr_matrix, index = variable_list, \
+                                  columns = variable_list)
+       
+    # формируем словарь условных обозначений для коэффициентов
+    coef_name_dict = {
+        'spearman':  chr(961),
+        'kendall':   chr(964),
+        'pearson':   'C',
+        'cramer':    'V',
+        'tschuprow': 'T'}
+    
+    # формируем матрицу аннотаций
+    annot_df = corr_matrix_df.copy()
+    
+    for i, elem_i in enumerate(variable_list):
+        for j, elem_j in enumerate(variable_list):
+            if j>i:
+                type_elem_i = data_df_exclude_dtypes_series[elem_i]
+                type_elem_j = data_df_exclude_dtypes_series[elem_j]
+                #print(f'{elem_i}, {elem_j}: {type_elem_i} {type_elem_j}')
+                if (type_elem_i == 'category' and type_elem_j == 'category'):
+                    temp_df = data_df.pivot_table(
+                        values = column_to_aggregate,
+                        index = elem_i,
+                        columns = elem_j,
+                        aggfunc = 'count',
+                        fill_value = 0)
+                    corr_matrix_df.loc[elem_i, elem_j] = \
+                        sci.stats.contingency.association(
+                        temp_df, 
+                        method = corr_method_quantitative, 
+                        correction='False')
+                    annot_df.loc[elem_i, elem_j] = \
+                        f'{coef_name_dict[corr_method_quantitative]} = ' + \
+                            str(round(corr_matrix_df.loc[elem_i, elem_j], \
+                                      DecPlace))
+                    if lower_half:
+                        corr_matrix_df.loc[elem_j, elem_i] = \
+                            corr_matrix_df.loc[elem_i, elem_j]
+                        annot_df.loc[elem_j, elem_i] = \
+                            annot_df.loc[elem_i, elem_j]
+                    else:
+                        corr_matrix_df.loc[elem_j, elem_i] = 0
+                        annot_df.loc[elem_j, elem_i] = ''
+                
+                elif ((type_elem_i != 'category' and type_elem_i != 'str') \
+                      and (type_elem_j != 'category' and type_elem_j != 'str')):
+                    temp_res = \
+                        sci.stats.spearmanr(data_df[elem_i], data_df[elem_j]) \
+                            if corr_method_qualitative == 'spearman' \
+                                else sci.stats.kendalltau(data_df[elem_i], \
+                                    data_df[elem_j]) \
+                                        if corr_method_qualitative == \
+                                            'kendall' else None
+                    corr_matrix_df.loc[elem_i, elem_j] = abs(temp_res.statistic)
+                    annot_df.loc[elem_i, elem_j] = \
+                        f'{coef_name_dict[corr_method_qualitative]} = ' + \
+                            str(round(corr_matrix_df.loc[elem_i, elem_j], \
+                                      DecPlace))
+                    if lower_half:
+                        corr_matrix_df.loc[elem_j, elem_i] = \
+                            corr_matrix_df.loc[elem_i, elem_j]                    
+                        annot_df.loc[elem_j, elem_i] = \
+                            annot_df.loc[elem_i, elem_j]
+                    else:
+                        corr_matrix_df.loc[elem_j, elem_i] = 0
+                        annot_df.loc[elem_j, elem_i] = ''
+                        
+                    
+                else:
+                    if data_df_clone is not None:
+                        elem_list = list(data_df_clone.columns)
+                        if (elem_i in elem_list) and (elem_j in elem_list):
+                            temp_df = data_df_clone.pivot_table(
+                                values = column_to_aggregate,
+                                index = elem_i,
+                                columns = elem_j,
+                                aggfunc = 'count',
+                                fill_value = 0)
+                            corr_matrix_df.loc[elem_i, elem_j] = \
+                                sci.stats.contingency.association(
+                                temp_df, 
+                                method = corr_method_quantitative, 
+                                correction='False')
+                            annot_df.loc[elem_i, elem_j] = \
+                                f'{coef_name_dict[corr_method_quantitative]} = '\
+                                    + str(round(corr_matrix_df.loc[elem_i, \
+                                        elem_j], DecPlace))
+                            if lower_half:
+                                corr_matrix_df.loc[elem_j, elem_i] = \
+                                    corr_matrix_df.loc[elem_i, elem_j]
+                                annot_df.loc[elem_j, elem_i] = \
+                                    annot_df.loc[elem_i, elem_j]
+                            else:
+                                corr_matrix_df.loc[elem_j, elem_i] = 0
+                                annot_df.loc[elem_j, elem_i] = ''
+                                
+                        else:
+                            annot_df.loc[elem_i, elem_j] = 'no col in df clone'
+                            #annot_df.loc[elem_j, elem_i] = annot_df.loc[elem_i, elem_j]                   
+                    else:
+                        annot_df.loc[elem_i, elem_j] = 'no df clone'
+                        #annot_df.loc[elem_j, elem_i] = annot_df.loc[elem_i, elem_j]                   
+        
+    # построение графика
+    fig, axes = plt.subplots(figsize=(graph_size))
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = 16)
+    sns.heatmap(
+        corr_matrix_df,
+        vmin = 0, vmax = 1,
+        cbar = True,
+        #center = True,
+        #annot = True,
+        annot = annot_df,
+        cmap = colormap,
+        #fmt = '.4f',
+        fmt = '',
+        xticklabels = variable_list,
+        yticklabels = variable_list)
+    plt.show()      
+    
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    # вывод результата
+    if corr_table_output:
+        result = corr_matrix_df
+        return result
+    else:
+        return 
+
+
+
+#------------------------------------------------------------------------------
+#   Функция transformation_numeric_to_category
+#
+#   Принимает в качестве аргумента числовое значение и преобразует его 
+#   в категориальный признак.
+#------------------------------------------------------------------------------  
+
+def transformation_numeric_to_category(
+    numeric_in,
+    transformation_dict:          dict,
+    top_bound_less_than_or_equal: bool = True):
+    
+    """
+    Принимает в качестве аргумента числовое значение и преобразует его 
+    в значение категориального признака в соответствии с правилами 
+    преобразования, закодированными в специальном словаре для преоразования 
+    данных.
+
+    Args:
+        numeric_in:     
+            числовое значение.
+            
+        transformation_dict (dict):    
+            словарь для преобразования данных. 
+                        
+        top_bound_less_than_or_equal (bool, optional):    
+            логический параметр, определяющий правило выбора категории 
+            в словаре для преобразования данных в зависимости от числового
+            значения: по умолчанию True, то есть применеятся правило "меньше 
+            или равно". 
+            Defaults to True.
+        
+    Returns:    
+        data_df (pd.core.frame.DataFrame):
+            преобразованный DataFrame            
+            
+    """
+    
+    transformation_scale = list(transformation_dict.values())
+    if top_bound_less_than_or_equal:
+        #if not numeric_in or isnan(numeric_in):
+        if isnan(numeric_in):
+            result = None
+        else:
+            for i, elem in enumerate(transformation_scale):
+                if abs(numeric_in) <= elem:
+                    result = list(transformation_dict.keys())[i]
+                    break
+    else: 
+        #if not numeric_in or isnan(numeric_in):
+        if isnan(numeric_in):
+            result = None
+        else:
+            for i, elem in enumerate(transformation_scale):
+                if abs(numeric_in) < elem:
+                    result = list(transformation_dict.keys())[i]
+                    break
+    
+    return result        
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_df_heatmap
+#   
+#   Визуализация матрицы корреляционных связей между признаками датасета 
+#   (числовыми и категориальными) с помощью тепловой карты (heatmap).
+#------------------------------------------------------------------------------
+
+def graph_df_heatmap(
+    data_df_in:                  pd.core.frame.DataFrame,
+    data_df_clone:               pd.core.frame.DataFrame = None,
+    cols_to_exclude:             list = None,
+    column_to_aggregate:         str = None,
+    corr_method_qualitative:     str = 'spearman',    
+    corr_method_quantitative:    str = 'cramer',      
+    DecPlace:                    int = 3,
+    title_figure:                str = None, 
+    title_figure_fontsize:       int = 10,
+    title_axes:                  str = None, 
+    title_axes_fontsize:         int = 12,
+    label_fontsize:              int = 10, 
+    tick_fontsize:               int = 8, 
+    label_legend_fontsize:       int = 10,
+    annot_fontsize:              int = 8,
+    colorbar_fontsize:           int = 8,
+    colormap                     = 'Reds',
+    lower_half:                  bool = False,
+    corr_table_output:           bool = True,
+    graph_size:                  tuple = (420/INCH/1.5, 297/INCH/1.5),
+    file_name:                   str = None):
+    
+    """
+    Визуализация матрицы корреляционных связей между признаками датасета 
+    (числовыми и категориальными) с помощью тепловой карты (heatmap).
+
+    Args:
+        data_df_in (pd.core.frame.DataFrame):              
+            исходный датасет.
+            
+        data_df_clone (pd.core.frame.DataFrame, optional):    
+            датасет-клон, в котором числовые признаки заменены на 
+            категориальные.
+            Defaults to None.
+                                                                  
+        cols_to_exclude (list, optional):                       
+            список-исключение признаков, которые не участвуют в формировании
+            корреляционной матрицы.                                                                                
+            
+            Defaults to None.
+        
+        column_to_aggregate (str, optional):                        
+            признак датасета, который используется для агрегирования 
+            числовых данных.                                                                                
+            Defaults to None.
+            
+        corr_method_qualitative (str, optional):                        
+            показатель для оценки тесноты связи между числовыми признаками:                                                                                
+            {'spearman', 'kendall'}                                                                                
+            Defaults to 'spearman'.
+            
+        corr_method_quantitative (str, optional):                        
+            показатель для оценки тесноты связи между категориальными 
+            признаками:                                                                                
+            {'cramer', 'tschuprow', 'pearson'}                                                                                
+            Defaults to 'cramer'.
+        
+        DecPlace (int, optional):        
+            точность (число знаков дробной части) при выводе коэффициентов.
+            Defaults to 3.
+                
+        title_figure (str, optional):                 
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):       
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 12.
+            
+        label_fontsize (int, optional):              
+            размер шрифта подписей осей.
+            Defaults to 10.
+            
+        tick_fontsize (int, optional):               
+            размер шрифта меток. 
+            Defaults to 8.
+            
+        label_legend_fontsize (int, optional):       
+            размер шрифта легенды. 
+            Defaults to 10.
+        
+        annot_fontsize (int, optional):       
+            размер шрифта подписей в центре плиток графика. 
+            Defaults to 8.
+        
+        colorbar_fontsize (int, optional):       
+            размер шрифта подписей цветовой полосы. 
+            Defaults to 8.
+            
+        colormap (optional):                          
+            цветовая палитра.
+            Defaults to 'Reds'.         
+                    
+        lower_half (bool, optional):
+            логический параметр: True/False - показывать/не показывать нижнюю 
+            половину корреляционной марицы.
+            Defaults to False.
+            
+        corr_table_output (bool, optional):
+            логический параметр: True/False - выводить/не выводить 
+            корреляционную марицу.
+            Defaults to True. 
+            
+        graph_size (tuple, optional):
+            размер графика в дюймах. 
+            Defaults to (420/INCH*1.4, 297/INCH), 
+                где константа INCH = 25.4 мм/дюйм.
+                
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+    
+    Returns:
+        result (pd.core.frame.DataFrame, optional):
+            результат (корреляционная матрица).
+            
+    """
+    
+        # особенность аргумента по умолчанию, который является списком (list)
+    cols_to_exclude = cols_to_exclude or []
+    
+    # формируем рабочий датасет - исключаем столбцы
+    data_df_exclude = data_df_in.drop(columns = cols_to_exclude)
+        
+    # типы столбцов в датасете
+    data_df_exclude_dtypes_series = data_df_exclude.dtypes
+        
+    # формируем копию датасета, в котором количественные признаки 
+    # трансформированы в качественные
+    data_df = data_df_exclude.copy()
+            
+    # формируем корреляционную матрицу
+    variable_list = list(data_df.columns)
+    variable_list.remove(column_to_aggregate)
+        
+    corr_matrix = np.eye(len(variable_list))
+    corr_matrix_df = pd.DataFrame(corr_matrix, index = variable_list, \
+                                  columns = variable_list)
+       
+    # формируем словарь условных обозначений для коэффициентов
+    coef_name_dict = {
+        'spearman':  chr(961),
+        'kendall':   chr(964),
+        'pearson':   'C',
+        'cramer':    'V',
+        'tschuprow': 'T'}
+    
+    # формируем матрицу аннотаций
+    annot_df = corr_matrix_df.copy()
+    
+    for i, elem_i in enumerate(variable_list):
+        for j, elem_j in enumerate(variable_list):
+            if j>i:
+                type_elem_i = data_df_exclude_dtypes_series[elem_i]
+                type_elem_j = data_df_exclude_dtypes_series[elem_j]
+                #print(f'{elem_i}, {elem_j}: {type_elem_i} {type_elem_j}')
+                if (type_elem_i == 'category' and type_elem_j == 'category'):
+                    temp_df = data_df.pivot_table(
+                        values = column_to_aggregate,
+                        index = elem_i,
+                        columns = elem_j,
+                        aggfunc = 'count',
+                        fill_value = 0)
+                    corr_matrix_df.loc[elem_i, elem_j] = \
+                        sci.stats.contingency.association(
+                        temp_df, 
+                        method = corr_method_quantitative, 
+                        correction='False')
+                    annot_df.loc[elem_i, elem_j] = \
+                        f'{coef_name_dict[corr_method_quantitative]} = ' + \
+                            str(round(corr_matrix_df.loc[elem_i, elem_j], \
+                                      DecPlace))
+                    if lower_half:
+                        corr_matrix_df.loc[elem_j, elem_i] = \
+                            corr_matrix_df.loc[elem_i, elem_j]
+                        annot_df.loc[elem_j, elem_i] = \
+                            annot_df.loc[elem_i, elem_j]
+                    else:
+                        corr_matrix_df.loc[elem_j, elem_i] = 0
+                        annot_df.loc[elem_j, elem_i] = ''
+                
+                elif ((type_elem_i != 'category' and type_elem_i != 'str') \
+                      and (type_elem_j != 'category' and type_elem_j != 'str')):
+                    temp_res = \
+                        sci.stats.spearmanr(data_df[elem_i], data_df[elem_j]) \
+                            if corr_method_qualitative == 'spearman' \
+                                else sci.stats.kendalltau(data_df[elem_i], \
+                                    data_df[elem_j]) \
+                                        if corr_method_qualitative == \
+                                            'kendall' else None
+                    corr_matrix_df.loc[elem_i, elem_j] = abs(temp_res.statistic)
+                    annot_df.loc[elem_i, elem_j] = \
+                        f'{coef_name_dict[corr_method_qualitative]} = ' + \
+                            str(round(corr_matrix_df.loc[elem_i, elem_j], \
+                                      DecPlace))
+                    if lower_half:
+                        corr_matrix_df.loc[elem_j, elem_i] = \
+                            corr_matrix_df.loc[elem_i, elem_j]                    
+                        annot_df.loc[elem_j, elem_i] = \
+                            annot_df.loc[elem_i, elem_j]
+                    else:
+                        corr_matrix_df.loc[elem_j, elem_i] = 0
+                        annot_df.loc[elem_j, elem_i] = ''
+                        
+                    
+                else:
+                    if data_df_clone is not None:
+                        elem_list = list(data_df_clone.columns)
+                        if (elem_i in elem_list) and (elem_j in elem_list):
+                            temp_df = data_df_clone.pivot_table(
+                                values = column_to_aggregate,
+                                index = elem_i,
+                                columns = elem_j,
+                                aggfunc = 'count',
+                                fill_value = 0)
+                            corr_matrix_df.loc[elem_i, elem_j] = \
+                                sci.stats.contingency.association(
+                                temp_df, 
+                                method = corr_method_quantitative, 
+                                correction='False')
+                            annot_df.loc[elem_i, elem_j] = \
+                                f'{coef_name_dict[corr_method_quantitative]} = '\
+                                    + str(round(corr_matrix_df.loc[elem_i, \
+                                        elem_j], DecPlace))
+                            if lower_half:
+                                corr_matrix_df.loc[elem_j, elem_i] = \
+                                    corr_matrix_df.loc[elem_i, elem_j]
+                                annot_df.loc[elem_j, elem_i] = \
+                                    annot_df.loc[elem_i, elem_j]
+                            else:
+                                corr_matrix_df.loc[elem_j, elem_i] = 0
+                                annot_df.loc[elem_j, elem_i] = ''
+                                
+                        else:
+                            annot_df.loc[elem_i, elem_j] = 'no col in df clone'
+                            #annot_df.loc[elem_j, elem_i] = annot_df.loc[elem_i, elem_j]                   
+                    else:
+                        annot_df.loc[elem_i, elem_j] = 'no df clone'
+                        #annot_df.loc[elem_j, elem_i] = annot_df.loc[elem_i, elem_j]                   
+        
+    # построение графика
+    fig, axes = plt.subplots(figsize=(graph_size))
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    sns.heatmap(
+        corr_matrix_df,
+        vmin = 0, vmax = 1,
+        cbar = True,
+        #center = True,
+        #annot = True,
+        annot = annot_df,
+        cmap = colormap,
+        #fmt = '.4f',
+        fmt = '',
+        xticklabels = variable_list,
+        yticklabels = variable_list,
+        annot_kws = {"fontsize": annot_fontsize})
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.figure.axes[-1].yaxis.set_tick_params(labelsize = colorbar_fontsize)
+    plt.show()      
+    
+    # вывод графика
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    # вывод результата
+    if corr_table_output:
+        result = corr_matrix_df
+        return result
+    else:
+        return     
+
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_hist_boxplot_barplot_skew_kurt_XY
+#   
+#   Комплексная визуализация влияния качественного признака на количественный
+#------------------------------------------------------------------------------
+
+def graph_hist_boxplot_barplot_skew_kurt_XY(
+    data_df:                  pd.core.frame.DataFrame,
+    column_qualitative:       str,
+    column_quantitative:      str,
+    Y_min_histplot            = None, 
+    Y_max_histplot            = None,
+    Y_min_barplot             = None, 
+    Y_max_barplot             = None,
+    errorbar_mean             = 'sd',    # 'ci', 'pi', "se", 'sd' or None
+    errorbar_median           = 'mad',
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 10,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 14,
+    title_graphics:           list = None,
+    label_fontsize:           int = 10, 
+    tick_fontsize:            int = 8, 
+    label_legend_fontsize:    int = 10,
+    palette                   = 'husl',
+    table_output:             bool = True,
+    p_level:                  float = 0.95,
+    graph_size:               tuple = (210/INCH, 297/INCH),
+    file_name:                str = None):
+    
+    """
+    Комплексная визуализация влияния качественного признака на количественный, 
+    включает следующие графики:
+        - гистограмма;
+        - коробчатая диаграмма;
+        - столбчатые графики среднего значения и медианы с доверительными 
+        интервалами (в виде полосы ошибок);
+        - точечные графики показателей асимметрии и эксцесса с доверительными 
+        интервалами (в виде полосы ошибок).
+
+    Args:
+        data_df (pd.core.frame.DataFrame):           
+            массив исходных данных.
+            
+        column_qualitative (str):                    
+            имя количественного признака в DataFrame.
+            
+        column_quantitative (str):                   
+            имя качественного признака в DataFrame.
+            
+        Y_min_histplot, Y_max_histplot (optional):   
+            мин. и макс. значение количественного признака на графике 
+            гистограмм.      
+            Defaults to None.
+            
+        Y_min_barplot, Y_max_barplot (optional):     
+            мин. и макс. значение количественного признака на графике 
+            коробчатой диаграммы.                                                 
+            Defaults to None.
+            
+        errorbar_mean (str, optional):               
+            параметр полосы ошибок для среднего значения 
+            {'sd', 'ci', 'pi', "se", 'sd', or None}, где:    
+                'sd' - standard deviation                                                         
+                'se' - standard error                                                         
+                'pi' - percentile interval                                                         
+                'ci' - confidence interval
+            Defaults to 'sd'.
+            
+        errorbar_median (str, optional):             
+            параметр полосы ошибок для медианы 
+            {'sd', 'ci', 'pi', "se", 'sd', 'mad or None}.
+            'mad' - median absolute deviation.      
+            Defaults to 'mad'.          
+            
+        title_figure (str, optional):                 
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):       
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):                  
+            заголовок области рисования (Axes). 
+            Defaults to None.
+            
+        title_axes_fontsize (int, optional):         
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 14.
+            
+        title_graphics (list, optional):             
+            заголовки графиков ax3, ax4, ax5, ax6. 
+            Defaults to None.                                                         
+            
+        label_fontsize (int, optional):              
+            размер шрифта подписей осей. 
+            Defaults to 10.
+            
+        tick_fontsize (int, optional):               
+            размер шрифта меток. 
+            Defaults to 8.
+            
+        label_legend_fontsize (int, optional):       
+            размер шрифта легенды. 
+            Defaults to 10.
+            
+        palette (optional):                          
+            цветовая палитра. 
+            Defaults to 'husl'.         
+            
+        table_output (bool, optional):               
+            логический параметр: True/False - выводить/не выводить таблицу 
+            со стат.характеристиками. 
+            Defaults to True.
+            
+        p_level (float, optional):                   
+            доверительная вероятность. 
+            Defaults to 0.95.
+            
+        graph_size (tuple, optional):                
+            размер графика в дюймах. 
+            Defaults to (297/INCH, 420/INCH), 
+                где константа INCH = 25.4 мм/дюйм.
+        
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+    
+    Returns:
+        result (pd.core.frame.DataFrame):
+            датасет со статистическими характеристиками
+            
+    """
+    
+    # создаем датасет со статистическими характеристиками по группированным данным
+    data_df_describe = data_df.groupby(column_quantitative)\
+        [column_qualitative].agg(['describe', 'median', 'skew'])
+       
+    # создаем отдельные датасеты по группированным данным и сохраняем их 
+    # в словаре data_df_group_dict
+    # элементы словаря data_df_group_dict - отдельные датасеты
+    column_quantitative_values_list = list(data_df_describe.index)
+    data_df_group_dict = dict()
+    for elem in column_quantitative_values_list:
+        mask_temp = data_df[column_quantitative] == elem
+        data_df_temp = pd.DataFrame(data_df[mask_temp])
+        data_df_group_dict[elem] = data_df_temp
+        
+    # добавляем в датасет data_df_describe отдельные стат.характеристики
+    data_df_describe['kurtosis'] = \
+        [sps.kurtosis(data_df_group_dict[key][column_qualitative]) \
+         for key in data_df_group_dict.keys()]
+    data_df_describe['mad'] = \
+        [sm.robust.scale.mad(data_df_group_dict[key][column_qualitative], c=1) \
+         for key in data_df_group_dict.keys()]
+    data_df_describe['CV'] = \
+        data_df_describe['describe']['std'] / data_df_describe['describe']\
+            ['mean']
+    #display(data_df_describe)
+          
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize = graph_size, constrained_layout = True)
+    gs = fig.add_gridspec(4, 2)
+    ax1 = fig.add_subplot(gs[0, :])
+    ax2 = fig.add_subplot(gs[1, :])
+    ax3 = fig.add_subplot(gs[2, 0])
+    ax4 = fig.add_subplot(gs[2, 1])
+    ax5 = fig.add_subplot(gs[3, 0])
+    ax6 = fig.add_subplot(gs[3, 1])
+    
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    
+    # заголовки графиков ax3, ax4, ax5, ax6
+    title_graphics = title_graphics if title_graphics \
+        else ['mean' if not errorbar_mean else 'mean' + ', ' \
+              + errorbar_mean, 
+              'median' if not errorbar_median else 'median' + ', ' \
+                  + errorbar_median, 
+              'skew, ci', 'kurtosis, ci']
+    
+    # границы по осям
+    Y_min_list = data_df_describe['describe']['min'].values
+    Y_max_list = data_df_describe['describe']['max'].values
+    
+    Y_min_calc_list = data_df_describe['describe']['mean'].values \
+        - 0.5*data_df_describe['describe']['std'].values
+    Y_max_calc_list = data_df_describe['describe']['mean'].values \
+        + 0.5*data_df_describe['describe']['std'].values
+    
+    Y_min_calc = min(min(Y_min_list), min(Y_min_calc_list))
+    Y_max_calc = max(max(Y_max_list), max(Y_max_calc_list))
+        
+    if not(Y_min_histplot) and not(Y_max_histplot):
+        (Y_min_histplot, Y_max_histplot) = \
+            (min(Y_min_list)*0.99, max(Y_max_list)*1.01)
+    if not(Y_min_barplot) and not(Y_max_barplot):        
+        (Y_min_barplot, Y_max_barplot) = (Y_min_calc*0.99, Y_max_calc*1.01)
+    
+    # гистограмма
+    ax1.set_title(title_axes, fontsize = title_axes_fontsize)
+    sns.histplot(
+        x = column_qualitative,
+        #y = 'Name',
+        data = data_df,
+        # выбор вида гистограммы 
+        # ('count', 'frequency', 'probability', 'percent', 'density')
+        stat = 'count',      
+        # выбор числа интервалов 
+        # ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt'))
+        bins = 'auto',       
+        # оценка плотности ядра (актуально только для одномерных данных)
+        kde = True,          
+        # визуальное представление (актуально только для одномерных данных): 
+        # 'bars', 'step' - гистограмма, 'poly' - полигон
+        element = 'step',    
+        hue = column_quantitative,
+        #multiple = layer,
+        legend = True,
+        label = '',
+        palette = palette,
+        #color = [sns.color_palette(palette).as_hex()[0:1]],
+        ax = ax1)
+    ax1.set_xlim(Y_min_histplot, Y_max_histplot)
+    ax1.grid()
+    ax1.tick_params(labelsize = tick_fontsize)
+    plt.setp(ax1.get_legend().get_texts(), fontsize = label_legend_fontsize) 
+        
+    # коробчатая диаграмма
+    #ax2.set_title('', fontsize = title_axes_fontsize)
+    sns.boxplot(
+        x = column_qualitative,
+        y = column_quantitative,
+        data = data_df,  
+        #hue = column_quantitative,  
+        orient = 'h',
+        width = 0.5,
+        palette = palette,
+        #color = sns.palplot(sns.color_palette(palette)),
+        ax = ax2)
+    ax2.set_xlim(Y_min_histplot, Y_max_histplot)
+    ax2.grid(axis = 'x')
+    ax2.tick_params(labelsize = tick_fontsize)
+    ax2.set_ylabel('')
+    
+    # среднее значение
+    ax3.set_title(title_graphics[0], fontsize = title_axes_fontsize)
+    sns.barplot(
+        x = column_quantitative,
+        y = column_qualitative,
+        data = data_df,
+        estimator = 'mean',
+        # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.errorbar.html
+        errorbar = errorbar_mean,    
+        #ci = errorbar_mean,
+        orient = 'v',
+        width = 0.3,
+        palette = palette,
+        ax = ax3)
+    ax3.set_ylabel(column_qualitative)
+    ax3.set_ylim(Y_min_barplot, Y_max_barplot)
+    #ax3.errorbar(errorbar_mean, 0)
+    ax3.tick_params(labelsize = tick_fontsize)
+    ax3.grid(axis = 'y')
+
+    # медиана
+    ax4.set_title(title_graphics[1], fontsize = title_axes_fontsize)
+    sns.barplot(
+        x = column_quantitative,
+        y = column_qualitative,
+        data = data_df,
+        estimator = 'median',
+        errorbar = errorbar_median if errorbar_median != 'mad' else None,
+        #ci = errorbar_median,
+        orient = 'v',
+        width = 0.3,
+        palette = palette,
+        ax = ax4)
+    ax4.set_ylabel(column_qualitative)
+    ax4.set_ylim(Y_min_barplot, Y_max_barplot)
+    ax4.tick_params(labelsize = tick_fontsize)
+    ax4.grid(axis = 'y')
+        
+    # медиана (errorbar)
+    # https://seaborn.pydata.org/tutorial/error_bars.html
+    if errorbar_median == 'mad':
+        x_coords = np.arange(0, len(data_df_describe), 1)
+        y_coords = data_df_describe['median'][column_qualitative]
+        yerr = data_df_describe['mad']
+        ax4.errorbar(
+            x_coords, y_coords, yerr,
+            ecolor = 'black',
+            elinewidth = 2, 
+            fmt = ' ')    
+    
+    # асимметрия
+    ax5.set_title(title_graphics[2], fontsize = title_axes_fontsize)
+    data5 = data_df_describe['skew'][column_qualitative]
+    sns.pointplot(
+        x = data_df_describe.index,
+        y = data5,
+        scale = 1,
+        join = True,
+        ax = ax5)
+    ax5.set_ylabel('')
+    ax5.tick_params(labelsize = tick_fontsize)
+    ax5.grid(axis = 'y')
+    
+    # асимметрия (errorbar)
+    x_coords = np.arange(0, len(data_df_describe), 1)
+    y_coords = data5
+    N_list = data_df_describe['describe']['count'].values
+    # табл.значение квантиля норм.распр.
+    u_p = sps.norm.ppf(p_level, 0, 1)    
+    # абс.ошибка асимметрии
+    abs_err_As_func = lambda N: sqrt(6*N*(N-1) / ((N-2)*(N+1)*(N+3)))    
+    yerr = [abs_err_As_func(n)*u_p for n in N_list]
+    
+    ax5.errorbar(
+            x_coords, y_coords, yerr,
+            #ecolor = sns.color_palette(palette).as_hex()[0],
+            elinewidth = 2, 
+            #fmt = ' '
+            )    
+
+    # эксцесс
+    ax6.set_title(title_graphics[3], fontsize = title_axes_fontsize)
+    data6 = data_df_describe['kurtosis']
+    sns.pointplot(
+        x = data_df_describe.index,
+        y = data6,
+        scale = 1,
+        join = True,
+        ax = ax6)
+    ax6.set_ylabel('')
+    ax6.tick_params(labelsize = tick_fontsize)
+    ax6.grid(axis = 'y')
+    
+    # эксцесс (errorbar)
+    y_coords = data6
+    # абс.ошибка эксцесса
+    abs_err_Es_func = lambda N: sqrt(24*N*(N-1)**2 / ((N-3)*(N-2)*(N+3)*(N+5)))    
+    yerr = [abs_err_Es_func(n)*u_p for n in N_list]
+    
+    ax6.errorbar(
+            x_coords, y_coords, yerr,
+            #ecolor = sns.color_palette(palette).as_hex()[0],
+            elinewidth = 2, 
+            #fmt = ' '
+            )    
+
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    if table_output:
+        result = data_df_describe.copy()
+        return result
+    else:
+        return 
 
 
 
@@ -1760,60 +3856,515 @@ def graph_regression_plot_sns(
     if file_name:
         fig.savefig(file_name, orientation = "portrait", dpi = 300)
         
-    return    
+    return  
+
+    
+
+#==============================================================================
+#               6. ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ ЗАКОНОВ РАСПРЕДЕЛЕНИЯ
+#==============================================================================  
+
+
+#------------------------------------------------------------------------------
+#   Функция norm_distr_check
+#   
+#   Проверка нормальности распределения: возвращает DataFrame, содержащий 
+#   результаты проверки нормальности распределения с использованием различных
+#   тестов
+#------------------------------------------------------------------------------
+
+
+def norm_distr_check (
+        data,
+        p_level:    float = 0.95):
+
+    """
+    Проверка нормальности распределения: возвращает DataFrame, содержащий 
+    результаты проверки нормальности распределения с использованием различных
+    тестов.
+    
+
+    Args:
+        data:                                     
+            исходный массив данных.
+            
+        p_level (float, optional):           
+            доверительная вероятность. 
+            Defaults to 0.95.
+
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат 
+    
+    Notes:
+        1. Функция реализует следующие тесты:
+            - тест Шапиро-Уилка (Shapiro-Wilk test) (при 8 <= N <= 1000)
+            - тест Эппса-Палли (Epps_Pulley_test) (при N >= 8)
+            - тест Д'Агостино (K2-test)
+            - тест Андерсона-Дарлинга (Anderson-Darling test)
+            - тест Колмогорова-Смирнова (Kolmogorov-Smirnov test) (при N >= 50)
+            - тест Лиллиефорса (Lilliefors’ test)
+            - тест Крамера-Мизеса-Смирнова (Cramér-von Mises test) (при N >= 40)
+            - тест Пирсона (хи-квадрат) (chi-square test) (при N >= 100)
+            - тест Харке-Бера (Jarque-Bera tes) (при N >= 2000)
+            - тест асимметрии (при N >= 8)
+            - тест эксцесса (при N >= 20)            
+            
+        2. Функция требует наличия файла table\Epps_Pulley_test_table.csv, 
+            который содержит табличные значения критерия Эппса-Палли.
+            
+    """    
+    
+    a_level = 1 - p_level
+    X = np.array(data)
+    N = len(X)
+       
+    # тест Шапиро-Уилка (Shapiro-Wilk test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.shapiro.html
+    if N >= 8:
+        result_ShW = sci.stats.shapiro(X)
+        s_calc_ShW = result_ShW.statistic
+        a_calc_ShW = result_ShW.pvalue
+        conclusion_ShW = 'gaussian distribution' if a_calc_ShW >= a_level \
+            else 'not gaussian distribution'
+    else:
+        result_ShW = '-'
+        s_calc_ShW = '-'
+        a_calc_ShW = '-'
+        conclusion_ShW = 'count less than 8'
+
+    # тест Эппса-Палли (Epps_Pulley_test)
+    сdf_beta_I = lambda x, a, b: sci.stats.beta.cdf(x, a, b, loc=0, scale=1)
+    g_beta_III = lambda z, δ: δ*z / (1+(δ-1)*z)
+    cdf_beta_III = \
+        lambda x, θ0, θ1, θ2, θ3, θ4: \
+            сdf_beta_I(g_beta_III((x - θ4)/θ3, θ2), θ0, θ1)
+    
+    θ_1 = (1.8645, 2.5155, 5.8256, 0.9216, 0.0008)    # для 15 < n < 50
+    θ_2 = (1.7669, 2.1668, 6.7594, 0.91, 0.0016)    # для n >= 50
+    
+    if N >= 8 and N <= 1000:
+        X_mean = X.mean()
+        m2 = np.var(X, ddof = 0)
+        # расчетное значение статистики критерия
+        A = sqrt(2) * np.sum([exp(-(X[i] - X_mean)**2 / (4*m2)) 
+                              for i in range(N)])
+        B = 2/N * np.sum(
+            [np.sum([exp(-(X[j] - X[k])**2 / (2*m2)) for j in range(0, k)]) 
+             for k in range(1, N)])
+        s_calc_EP = 1 + N / sqrt(3) + B - A
+        # табличное значение статистики критерия
+        Tep_table_df = pd.read_csv(
+            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
+            sep=';',
+            index_col='n')
+        p_level_dict = {
+            0.9:   Tep_table_df.columns[0],
+            0.95:  Tep_table_df.columns[1],
+            0.975: Tep_table_df.columns[2],
+            0.99:  Tep_table_df.columns[3]}
+        f_lin = sci.interpolate.interp1d(Tep_table_df.index, \
+                                         Tep_table_df[p_level_dict[p_level]])
+        critical_value_EP = float(f_lin(N))
+        # проверка гипотезы
+        if 15 < N < 50:
+            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_1[0], θ_1[1], \
+                                         θ_1[2], θ_1[3], θ_1[4])
+            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level \
+                else 'not gaussian distribution'            
+        elif N >= 50:
+            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_2[0], θ_2[1], \
+                                         θ_2[2], θ_2[3], θ_2[4])
+            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level \
+                else 'not gaussian distribution'            
+        else:
+            a_calc_EP = ''              
+            conclusion_EP = 'gaussian distribution' \
+                if s_calc_EP <= critical_value_EP \
+                    else 'not gaussian distribution'            
+                
+    elif N > 1000:
+        s_calc_EP = '-'
+        critical_value_EP = '-'
+        a_calc_EP = '-'
+        conclusion_EP = 'count more than 1000'
+    else:
+        s_calc_EP = '-'
+        critical_value_EP = '-'
+        a_calc_EP = '-'
+        conclusion_EP = 'count less than 8'
+    
+    
+    # тест Д'Агостино (K2-test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.normaltest.html
+    if N >= 8:
+        result_K2 = sci.stats.normaltest(X)
+        s_calc_K2 = result_K2.statistic
+        a_calc_K2 = result_K2.pvalue
+        conclusion_K2 = 'gaussian distribution' if a_calc_K2 >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_K2 = '-'
+        a_calc_K2 = '-'
+        conclusion_K2 = 'count less than 8'
+    
+    # тест Андерсона-Дарлинга (Anderson-Darling test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.anderson.html
+    result_AD = sci.stats.anderson(X)
+    df_AD = pd.DataFrame({
+        'a_level (%)': result_AD.significance_level,
+        'statistic': [result_AD.statistic 
+                      for i in range(len(result_AD.critical_values))],
+        'critical_value': result_AD.critical_values
+        })
+    statistic_AD = float(df_AD[df_AD['a_level (%)'] == \
+        round((1 - p_level)*100, 1)]['statistic'])
+    critical_value_AD = \
+        float(df_AD[df_AD['a_level (%)'] == round((1 - p_level)*100, 1)]\
+              ['critical_value'])
+    conclusion_AD = 'gaussian distribution' \
+        if statistic_AD < critical_value_AD else 'not gaussian distribution'
+    
+    # тест Колмогорова-Смирнова (Kolmogorov-Smirnov test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kstest.html#scipy.stats.kstest
+    if N >= 50:
+        result_KS = sci.stats.kstest(X, 'norm')
+        s_calc_KS = result_KS.statistic
+        a_calc_KS = result_KS.pvalue
+        conclusion_KS = 'gaussian distribution' if a_calc_KS >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_KS = '-'
+        a_calc_KS = '-'
+        conclusion_KS = 'count less than 50'
+        
+    # тест Лиллиефорса (Lilliefors’ test)
+    # https://www.statsmodels.org/dev/generated/statsmodels.stats.diagnostic.lilliefors.html
+    from statsmodels.stats.diagnostic import lilliefors
+    s_calc_L, a_calc_L = sm.stats.diagnostic.lilliefors(X, 'norm')
+    conclusion_L = 'gaussian distribution' if a_calc_L >= a_level \
+        else 'not gaussian distribution'  
+    
+    # тест Крамера-Мизеса-Смирнова (Cramér-von Mises test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.cramervonmises.html#scipy-stats-cramervonmises
+    if N >= 40:
+        result_CvM = sci.stats.cramervonmises(X, 'norm')
+        s_calc_CvM = result_CvM.statistic
+        a_calc_CvM = result_CvM.pvalue
+        conclusion_CvM = 'gaussian distribution' if a_calc_CvM >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_CvM = '-'
+        a_calc_CvM = '-'
+        conclusion_CvM = 'count less than 40'
+    
+    # тест Пирсона (хи-квадрат) (chi-square test)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chisquare.html#scipy-stats-chisquare
+    if N >= 100:
+        ddof = 2    # поправка к числу степеней свободы 
+                    # (число параметров распределения, оцениваемое по выборке)
+        result_Chi2 = sci.stats.chisquare(X, ddof=ddof)
+        s_calc_Chi2 = result_Chi2.statistic
+        a_calc_Chi2 = result_Chi2.pvalue
+        conclusion_Chi2 = 'gaussian distribution' if a_calc_Chi2 >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_Chi2 = '-'
+        a_calc_Chi2 = '-'
+        conclusion_Chi2 = 'count less than 100'
+        
+    # тест Харке-Бера (асимметрии и эксцесса) (Jarque-Bera tes)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.jarque_bera.html#scipy-stats-jarque-bera
+    if N > 2000:
+        result_JB = sci.stats.jarque_bera(X)
+        s_calc_JB = result_JB.statistic
+        a_calc_JB = result_JB.pvalue
+        conclusion_JB = 'gaussian distribution' if a_calc_JB >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_JB = '-'
+        a_calc_JB = '-'
+        conclusion_JB = 'count less than 2000'
+    
+    # тест асимметрии
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skewtest.html#scipy-stats-skewtest
+    if N >= 8:
+        result_As = sci.stats.skewtest(X)
+        s_calc_As = result_As.statistic
+        a_calc_As = result_As.pvalue
+        conclusion_As = 'gaussian distribution' if a_calc_As >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_As = '-'
+        a_calc_As = '-'
+        conclusion_As = 'count less than 8'
+     
+    # тест эксцесса
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kurtosistest.html#scipy-stats-kurtosistest
+    if N > 20:
+        result_Es = sci.stats.kurtosistest(X)
+        s_calc_Es = result_Es.statistic
+        a_calc_Es = result_Es.pvalue
+        conclusion_Es = 'gaussian distribution' if a_calc_Es >= a_level \
+            else 'not gaussian distribution'
+    else:
+        s_calc_Es = '-'
+        a_calc_Es = '-'
+        conclusion_Es = 'count less than 20'
+    
+    # Создадим DataFrame для сводки результатов    
+    result = pd.DataFrame({
+    'test': (
+        'Shapiro-Wilk test',
+        'Epps-Pulley test',
+        "D'Agostino's K-squared test",
+        'Anderson-Darling test',
+        'Kolmogorov–Smirnov test',
+        'Lilliefors test',
+        'Cramér–von Mises test',
+        'Chi-squared test',
+        'Jarque–Bera test',
+        'skewtest',
+        'kurtosistest'),
+    'p_level': (p_level),
+    'a_level': (a_level),
+    'a_calc': (
+        a_calc_ShW,
+        a_calc_EP,
+        a_calc_K2,
+        '',
+        a_calc_KS,
+        a_calc_L,
+        a_calc_CvM,
+        a_calc_Chi2,
+        a_calc_JB,
+        a_calc_As,
+        a_calc_Es),
+    'a_calc >= a_level': (
+        a_calc_ShW >= a_level if N >= 8 else '-',
+        a_calc_EP >= a_level if N > 15 and N <= 1000 else '-',
+        a_calc_K2 >= a_level if N >= 8 else '-',
+        '',
+        a_calc_KS >= a_level if N >= 50 else '-',
+        a_calc_L >= a_level,
+        a_calc_CvM >= a_level if N >= 40 else '-',
+        a_calc_Chi2 >= a_level if N >= 100 else '-',
+        a_calc_JB >= a_level if N >= 2000 else '-',
+        a_calc_As >= a_level if N >= 8 else '-',
+        a_calc_Es >= a_level if N > 20 else '-'),
+    'statistic': (
+        s_calc_ShW,
+        s_calc_EP,
+        s_calc_K2,
+        statistic_AD,
+        s_calc_KS,
+        s_calc_L,
+        s_calc_CvM,
+        s_calc_Chi2,
+        s_calc_JB,
+        s_calc_As,
+        s_calc_Es),
+    'critical_value': (
+        '',
+        critical_value_EP,
+        '',
+        critical_value_AD,
+        '', '', '', '', '', '', ''),
+    'statistic < critical_value': (
+        '',
+        s_calc_EP < critical_value_EP  if N >= 8 else '-',
+        '',
+        statistic_AD < critical_value_AD,
+        '', '', '', '', '', '', ''),
+    'conclusion': (
+        conclusion_ShW,
+        conclusion_EP,
+        conclusion_K2,
+        conclusion_AD,
+        conclusion_KS,
+        conclusion_L,
+        conclusion_CvM,
+        conclusion_Chi2,
+        conclusion_JB,
+        conclusion_As,
+        conclusion_Es
+        )})  
+        
+    return result
+
+
+
+#==============================================================================
+#               7. ФУНКЦИИ ДЛЯ ВЫЯВЛЕНИЯ АНОМАЛЬНЫХ ЗНАЧЕНИЙ (ВЫБРОСОВ)
+#==============================================================================    
+    
+#------------------------------------------------------------------------------
+#   Функция detecting_outliers_mad_test
+#   Критерий максимального абсолютного отклонения (М.А.О.) (см.[Кобзарь, с.547]
+#------------------------------------------------------------------------------
+
+def detecting_outliers_mad_test(
+        X_in,
+        p_level=0.95,
+        show_in_full=False,
+        delete_outlier=False):
+    N = len(X_in)
+    X_mean = X_in.mean()
+    X_std = X_in.std(ddof = 1)
+    # создаем вспомогательный DataFrame, отсортированный по возрастанию
+    data = pd.DataFrame({'value': X_in}).sort_values(by='value')
+    # расчетное значение статистики критерия М.А.О.
+    data['mad_calc'] = abs((data['value'] - X_mean)/X_std)
+    # аппроксимация табличного значения статистики критерия М.А.О.
+    mad_table = lambda n: 1.39 + 0.462*log(n-3) if 5<=n<35 else 2.136 - 0.281*log(n-15) if 35<=n<=500 else '-'
+    data['mad_table'] = mad_table(N)
+    # добавляем во вспомогательный DataFrame столбец 'outlier_conclusion', в котором выбросу будут отмечены как 'outlier'
+    data['outlier_conclusion'] = '-'
+    mask = data['mad_calc'] >= data['mad_table']
+    data.loc[mask, 'outlier_conclusion'] = 'outlier'
+        
+    if delete_outlier:
+        X_out = np.delete(X_in, [data.loc[mask].index])
+        return data, X_out
+    else:
+        return data
+
 
 
 
 
 
 #==============================================================================
-#               ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ ТАБЛИЦ СОПРЯЖЕННОСТИ
+#               8. ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ КАТЕГОРИАЛЬНЫХ ДАННЫХ
 #==============================================================================  
 
 #------------------------------------------------------------------------------
-#   graph_contingency_tables_hist_3D
+#   Функция graph_contingency_tables_hist_3D
+#   
+#   Визуализация категориальных данных: построение трехмерных гистограмм
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_hist_3D(
-    data_df_in: pd.core.frame.DataFrame = None,
-    data_XY_list_in: list = None,
-    title_figure = None, title_figure_fontsize = 14,
-    title_axes = None, title_axes_fontsize = 16,
-    rows_label = None, cols_label = None, vertical_label = None, label_fontsize = 14, 
-    rows_ticklabels_list = None, cols_ticklabels_list = None,
-    tick_fontsize = 11, rows_tick_rotation = 0, cols_tick_rotation = 0, 
-    legend = None, legend_fontsize = 14,
-    labelpad = 20,
-    color=None,
-    tight_layout=True,
-    graph_size = (297/INCH, 210/INCH),
-    file_name = None):
+    data_df_in:               pd.core.frame.DataFrame = None,
+    data_XY_list_in:          list = None,
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 10,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 12,
+    rows_label                = None, 
+    cols_label                = None, 
+    vertical_label:           str = None, 
+    label_fontsize:           int = 10, 
+    rows_ticklabels_list:     list = None, 
+    cols_ticklabels_list:     list = None,
+    tick_fontsize:            int = 8, 
+    rows_tick_rotation:       int = 47.5, 
+    cols_tick_rotation:       int = -17.5, 
+    legend:                   str = None, 
+    legend_fontsize:          int = 10,
+    labelpad:                 int = 20,
+    color                     = None,
+    tight_layout:             bool = True,
+    graph_size:               tuple = (297/INCH, 297/INCH/2),
+    file_name:                str = None):
     
-    """Функция для визуализации категориальных данных: построение трехмерных гистограмм
+    """
+    Визуализация категориальных данных: построение трехмерных гистограмм.
 
     Args:
-        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - dataframe). Defaults to None.
-        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
-        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
-        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 14.
-        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
-        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 16.
-        rows_label (_type_, optional):                  Подпись оси (по срокам). Defaults to None.
-        cols_label (_type_, optional):                  Подпись оси (по столбцам). Defaults to None.
-        vertical_label (_type_, optional):              Подпись вертикальной оси. Defaults to None.
-        label_fontsize (int, optional):                 Размер шрифта подписей осей. Defaults to 14.
-        rows_ticklabels_list (_type_, optional):        Список меток для оси (по строкам). Defaults to None.
-        cols_ticklabels_list (_type_, optional):        Список меток для оси (по столбцам). Defaults to None.
-        tick_fontsize (int, optional):                  Размер шрифта меток осей. Defaults to 11.
-        rows_tick_rotation (int, optional):             Угол поворота меток для оси (по строкам). Defaults to 0.
-        cols_tick_rotation (int, optional):             Угол поворота меток для оси (по столбцам). Defaults to 0.
-        legend (_type_, optional):                      Текст легенды. Defaults to None.
-        legend_fontsize (int, optional):                Размер шрифта легенды. Defaults to 14.
-        labelpad (int, optional):                       Расстояние между осью и метками. Defaults to 20.
-        color (_type_, optional):                       Цвет графика. Defaults to None.
-        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
-        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH, 210/INCH).
-        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+        data_df_in (pd.core.frame.DataFrame, optional): 
+            массив исходных данных. 
+            Defaults to None.
+            
+        data_XY_list_in (list, optional):               
+            массив исходных данных. 
+            Defaults to None.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 14.
+            
+        rows_label (optional):                  
+            подпись оси (по строкам). 
+            Defaults to None.
+            
+        cols_label (optional):                  
+            подпись оси (по столбцам). 
+            Defaults to None.
+            
+        vertical_label (str, optional):              
+            подпись вертикальной оси. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):                 
+            размер шрифта подписей осей. 
+            Defaults to 10.
+            
+        rows_ticklabels_list (list, optional):        
+            список меток для оси (по строкам). 
+            Defaults to None.
+            
+        cols_ticklabels_list (list, optional):        
+            список меток для оси (по столбцам). 
+            Defaults to None.
+            
+        tick_fontsize (int, optional):                  
+            размер шрифта меток осей. 
+            Defaults to 8.
+            
+        rows_tick_rotation (int, optional):             
+            угол поворота меток для оси (по строкам). 
+            Defaults to 47.5.
+            
+        cols_tick_rotation (int, optional):             
+            угол поворота меток для оси (по столбцам). 
+            Defaults to -17.5.
+            
+        legend (str, optional):                      
+            текст легенды. 
+            Defaults to None.
+            
+        legend_fontsize (int, optional):                
+            размер шрифта легенды. 
+            Defaults to 10.
+            
+        labelpad (int, optional):                       
+            расстояние между осью и метками. 
+            Defaults to 20.
+            
+        color (optional):                       
+            цвет графика. 
+            Defaults to None.
+            
+        tight_layout (bool, optional):                  
+            логический параметр: автоматическая настройка плотной компоновки 
+            графика (да/нет, True/False). 
+            Defaults to True.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм.
+        
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+           
+    Returns:
+        None
+            
     """
     
     
@@ -1870,18 +4421,21 @@ def graph_contingency_tables_hist_3D(
     
     # метки осей
     x_ticklabels_list = cols_ticklabels_list if cols_ticklabels_list \
-        else list(data_df.columns) if (data_df is not None) else ''
+        else list(data_df_in.columns) if (data_df_in is not None) else ''
     y_ticklabels_list = rows_ticklabels_list if rows_ticklabels_list \
-        else list(data_df.index) if data_df is not None else ''
+        else list(data_df_in.index) if data_df_in is not None else ''
     
     # форматирование меток осей (https://matplotlib.org/stable/api/ticker_api.html)
+    from matplotlib.ticker import IndexLocator
     ax.xaxis.set_major_locator(IndexLocator(1.0, 0.25))
     ax.yaxis.set_major_locator(IndexLocator(1.0, 0.25))
-        
+            
     # устанавливаем метки осей
-    ax.set_xticklabels(x_ticklabels_list, fontsize = tick_fontsize, rotation=rows_tick_rotation)
-    ax.set_yticklabels(y_ticklabels_list, fontsize = tick_fontsize, rotation=cols_tick_rotation)
-    
+    ax.set_xticklabels(x_ticklabels_list, fontsize = tick_fontsize, \
+        rotation=cols_tick_rotation)
+    ax.set_yticklabels(y_ticklabels_list, fontsize = tick_fontsize, \
+        rotation=rows_tick_rotation)
+        
     # расстояние между подписями осей и метками осей
     ax.xaxis.labelpad = labelpad
     ax.yaxis.labelpad = labelpad
@@ -1905,59 +4459,155 @@ def graph_contingency_tables_hist_3D(
 
 
 #------------------------------------------------------------------------------
-#   graph_contingency_tables_mosaicplot_sm
+#   Функция graph_contingency_tables_mosaicplot_sm
+#   
+#   Визуализация категориальных данных: построение мозаичных диаграмм
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_mosaicplot_sm(
-    data_df_in: pd.core.frame.DataFrame = None,
-    data_XY_list_in: list = None,
-    properties: dict = {},
-    labelizer: bool = True,
-    title_figure = None, title_figure_fontsize = 12,
-    title_axes = None, title_axes_fontsize = 16,
-    x_label = None, y_label = None, label_fontsize = 14, 
-    x_ticklabels_list = None, y_ticklabels_list = None,
-    x_ticklabels: bool = True, y_ticklabels: bool = True,
-    #tick_fontsize = 11,
-    tick_label_rotation = 0,
-    legend_list = None, legend_fontsize = 11,
-    text_fontsize = 16,
-    gap = 0.005,
-    horizontal: bool = True,
-    statistic: bool = True,
-    tight_layout=True,
-    graph_size = (297/INCH, 210/INCH),
-    file_name = None):
+    data_df_in:              pd.core.frame.DataFrame = None,
+    data_XY_list_in:         list = None,
+    properties:              dict = {},
+    labelizer:               bool = True,
+    title_figure             = None, 
+    title_figure_fontsize    = 10,
+    title_axes               = None, 
+    title_axes_fontsize      = 14,
+    x_label:                 str = None, 
+    y_label:                 str = None, 
+    label_fontsize           = 10, 
+    x_ticklabels_list:       list = None, 
+    y_ticklabels_list:       list = None,
+    x_ticklabels:            bool = True, 
+    y_ticklabels:            bool = True,
+    tick_fontsize:           int = 8,
+    tick_label_rotation:     int = 0,
+    legend_list:             list = None, 
+    legend_fontsize:         int = 10,
+    text_fontsize:           int = 12,
+    gap:                     float = 0.005,
+    horizontal:              bool = True,
+    statistic:               bool = True,
+    tight_layout:            bool = True,
+    graph_size:              tuple = (210/INCH, 297/INCH/2),
+    file_name:               str = None):
     
-    """Функция для визуализации категориальных данных: построение мозаичных диаграмм
+    """
+    Визуализация категориальных данных: построение мозаичных диаграмм.
 
     Args:
-        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
-        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
-        properties (dict, optional):                    Функция возвращает словарь свойств плиток графика (цвет, штриховка и пр.). Defaults to {}.
-        labelizer (bool, optional):                     Функция генерирует текст для отображения в центре каждой плитки графика. Defaults to True.
-        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
-        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 12.
-        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
-        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 16.
-        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
-        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
-        label_fontsize (int, optional):                 Размер шрифта подписей. Defaults to 14.
-        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
-        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
-        x_ticklabels (bool, optional):                  Отображать на графике (да/нет, True/False) метки для оси OX. Defaults to True.
-        y_ticklabels (bool, optional):                  Отображать на графике (да/нет, True/False) метки для оси OY. Defaults to True.
-        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
-        tick_label_rotation (int, optional):            Угол поворота меток для оси. Defaults to 0.
-        legend_list (_type_, optional):                 Список названий категорий для легенды. Defaults to None.
-        legend_fontsize (int, optional):                Размер шрифта легенды. Defaults to 11.
-        text_fontsize (int, optional):                  Размер шрифта подписей в центре плиток графика. Defaults to 16.
-        gap (float, optional):                          Список зазоров. Defaults to 0.005.
-        horizontal (bool, optional):                    Начальное направление разделения. Defaults to True.
-        statistic (bool, optional):                     Применять статистическую модель для придания цвета графику (да/нет, True/False). Defaults to True.
-        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
-        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH, 210/INCH).
-        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+        data_df_in (pd.core.frame.DataFrame, optional): 
+            массив исходных данных. 
+            Defaults to None.
+            
+        data_XY_list_in (list, optional):               
+            массив исходных данных. 
+            Defaults to None.
+            
+        properties (dict, optional):                    
+            словарь, задающий свойства плиток графика (цвет, штриховка и пр.). 
+            Defaults to {}.
+            
+        labelizer (bool, optional):
+            логический параметр: True/False - отображать/не отображать
+            текст в центре каждой плитки графика. 
+            Defaults to True.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 14.
+            
+        x_label (str, optional):
+            подпись оси OX. 
+            Defaults to None.
+            
+        y_label (str, optional):                     
+            подпись оси OY. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):                 
+            размер шрифта подписей. 
+            Defaults to 10.
+            
+        x_ticklabels_list (list, optional):           
+            список меток для оси OX. 
+            Defaults to None.
+            
+        y_ticklabels_list (list, optional):           
+            список меток для оси OY. 
+            Defaults to None.
+            
+        x_ticklabels (bool, optional):
+            логический параметр: True/False - отображать на графике (да/нет) 
+            метки для оси OX. 
+            Defaults to True.
+            
+        y_ticklabels (bool, optional):
+            логический параметр: True/False - отображать на графике (да/нет) 
+            метки для оси OY. 
+            Defaults to True.
+            
+        tick_fontsize (int, optional):
+            размер шрифта меток осей. 
+            Defaults to 8.
+            
+        tick_label_rotation (int, optional):            
+            угол поворота меток для оси. 
+            Defaults to 0.
+            
+        legend_list (list, optional):                 
+            список названий категорий для легенды. 
+            Defaults to None.
+            
+        legend_fontsize (int, optional):                
+            размер шрифта легенды. 
+            Defaults to 10.
+            
+        text_fontsize (int, optional):                  
+            размер шрифта подписей в центре плиток графика. 
+            Defaults to 12.
+            
+        gap (float, optional):                          
+            список зазоров. Defaults to 0.005.
+            
+        horizontal (bool, optional):                    
+            логический параметр: начальное направление разделения. 
+            Defaults to True.
+            
+        statistic (bool, optional):                     
+            логический параметр: True/False - применять статистическую модель 
+            для придания цвета графику (да/нет). 
+            Defaults to True.
+            
+        tight_layout (bool, optional):                  
+            логический параметр: автоматическая настройка плотной компоновки 
+            графика (да/нет, True/False). 
+            Defaults to True.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм.
+        
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+
+    Returns:
+        None
+            
     """
     
     # создание рисунка (Figure) и области рисования (Axes)
@@ -2015,8 +4665,7 @@ def graph_contingency_tables_mosaicplot_sm(
     for i, x in enumerate(x_list):
         for j, y in enumerate(y_list):
             data_dict[(x, y)] = data_np[i, j]
-    print(f'data_dict = \n{data_dict}')
-            
+                
     # формируем словарь (dict) labelizer и функцию labelizer_func
     labelizer_dict = {}
     for i, x in enumerate(x_list):
@@ -2036,6 +4685,7 @@ def graph_contingency_tables_mosaicplot_sm(
            #axes_label=False,
            labelizer=labelizer_func,
            properties=properties)
+    axes.tick_params(labelsize = tick_fontsize)
             
     # легенда
     if legend_list:
@@ -2063,24 +4713,44 @@ def graph_contingency_tables_mosaicplot_sm(
 
 
 #------------------------------------------------------------------------------
-#   make_color_mosaicplot_dict
+#   Функция make_color_mosaicplot_dict
+#   
+#   Визуализация категориальных данных: вспомогательная функция - формирует 
+#   словарь (dict) свойств плиток мозаичного графика (цвет, штриховка и пр.) 
+#   для функции graph_contingency_tables_mosaicplot_sm.
 #------------------------------------------------------------------------------
 
 def make_color_mosaicplot_dict(
-        rows_list, cols_list, 
-        props_dict_rows=None,
-        props_dict_cols=None):
+        rows_list:          list, 
+        cols_list:          list, 
+        props_dict_rows:    dict = None,
+        props_dict_cols:    dict = None):
     
-    """Функция формирует словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) для функции graph_contingency_tables_mosaicplot_sm
+    """
+    Визуализация категориальных данных: вспомогательная функция - формирует 
+    словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) 
+    для функции graph_contingency_tables_mosaicplot_sm.
 
     Args:
-        rows_list (_type_):                 Список категорий (по строкам)
-        cols_list (_type_):                 Список категорий (по столбцам)
-        props_dict_rows (_type_, optional): Словарь цветовых свойств категорий (по строкам). Defaults to None.
-        props_dict_cols (_type_, optional): Словарь цветовых свойств категорий (по столбцам). Defaults to None.
+        rows_list (list):                 
+            список категорий (по строкам)
+            
+        cols_list (list):                 
+            список категорий (по столбцам)
+            
+        props_dict_rows (dict, optional): 
+            словарь цветовых свойств категорий (по строкам). 
+            Defaults to None.
+            
+        props_dict_cols (dict, optional): 
+            словарь цветовых свойств категорий (по столбцам). 
+            Defaults to None.
 
     Returns:
-        _type_: словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) для функции graph_contingency_tables_mosaicplot_sm
+        result (dict): 
+            словарь свойств плиток мозаичного графика (цвет, штриховка и пр.) 
+            для функции graph_contingency_tables_mosaicplot_sm.
+            
     """
     
     result = {}
@@ -2102,46 +4772,118 @@ def make_color_mosaicplot_dict(
 
 
 #------------------------------------------------------------------------------
-#   graph_contingency_tables_bar_freqint
+#   Функция graph_contingency_tables_bar_freqint
+#   
+#   Визуализация категориальных данных: построение столбчатых диаграмм и 
+#   графиков взаимодействия частот
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_bar_freqint(
-    data_df_in: pd.core.frame.DataFrame = None,
-    data_XY_list_in: list = None,
-    graph_inclusion='arf',
-    title_figure=None, title_figure_fontsize=14, title_axes_fontsize=11,
-    x_label = None, y_label = None, label_fontsize = 11, 
-    x_ticklabels_list = None, y_ticklabels_list = None, #tick_fontsize = 11,
-    color = None,
-    tight_layout=True,
-    result_output=False,
-    graph_size=None,
-    file_name=None):
+    data_df_in:               pd.core.frame.DataFrame = None,
+    data_XY_list_in:          list = None,
+    graph_inclusion:          str = 'arf',
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 12, 
+    title_axes_fontsize:      int = 10,
+    x_label                   = None, 
+    y_label                   = None, 
+    label_fontsize:           int = 10, 
+    x_ticklabels_list:        list = None, 
+    y_ticklabels_list:        list = None, 
+    tick_fontsize:            int = 8,
+    legend_fontsize:          int = 10,
+    color                     = None,
+    tight_layout:             bool = True,
+    result_output:            bool = False,
+    graph_size:               tuple = None,
+    file_name:                str = None):
     
-    """Функция для визуализации категориальных данных: построение столбчатых диаграмм и графиков взаимодействия частот
+    """
+    Визуализация категориальных данных: построение столбчатых диаграмм и 
+    графиков взаимодействия частот.
 
     Args:
-        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
-        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
-        graph_inclusion (str, optional):                Параметр, определяющий перечень графиков, которые строит функция:
-                                                            'a' - столбчатая диаграмма (в абсолютных частотах)
-                                                            'r' - столбчатая диаграмма (в относительных частотах)
-                                                            'f' - график взаимодействия частот
-                                                            Defaults to 'arf'.
-        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
-        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 14.
-        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 11.
-        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
-        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
-        label_fontsize (int, optional):                 Размер шрифта подписей по осям_. Defaults to 11.
-        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
-        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
-        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
-        color (_type_, optional):                       Список, задающий цвета для категорий. Defaults to None.
-        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
-        result_output (bool, optional):                 Выводить таблицу (DataFrame) c числовыми данными (да/нетб True/False). Defaults to False.
-        graph_size (_type_, optional):                  Размера графика. Defaults to None.
-        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+        data_df_in (pd.core.frame.DataFrame, optional): 
+            массив исходных данных. 
+            Defaults to None.
+            
+        data_XY_list_in (list, optional):               
+            массив исходных данных. 
+            Defaults to None.
+            
+        graph_inclusion (str, optional):                
+            параметр, определяющий набор графиков на одном рисунке (Figure).                                                  
+            Defaults to 'arf', где:                                                            
+                'a' - столбчатая диаграмма (в абсолютных частотах)
+                'r' - столбчатая диаграмма (в относительных частотах)
+                'f' - график взаимодействия частот
+                                                            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 14.
+            
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 12.
+            
+        x_label (str, optional):
+            подпись оси OX. 
+            Defaults to None.
+            
+        y_label (str, optional):                     
+            подпись оси OY. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):                 
+            размер шрифта подписей. 
+            Defaults to 10.
+            
+        x_ticklabels_list (list, optional):           
+            список меток для оси OX. 
+            Defaults to None.
+            
+        y_ticklabels_list (list, optional):           
+            список меток для оси OY. 
+            Defaults to None.
+            
+        tick_fontsize (int, optional):
+            временно заблокировано. Defaults to 8.
+        
+        legend_fontsize (int, optional):                
+            размер шрифта легенды. 
+            Defaults to 10.
+                    
+            
+        color (optional):                       
+            список, задающий цвета для категорий. 
+            Defaults to None.
+            
+        tight_layout (bool, optional):                  
+            логический параметр: автоматическая настройка плотной компоновки 
+            графика (да/нет, True/False). 
+            Defaults to True.
+            
+        result_output (bool, optional):                 
+            логический параметр: True/False - выводить таблицу (DataFrame) 
+            c числовыми данными (да/нет).
+            Defaults to False.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to None.
+        
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+
+    Returns:
+        data_df_abs, data_df_rel (pd.core.frame.DataFrame, optional):
+            таблица (DataFrame) с абс. и отн. частотами
+            
     """
     
     # данные для построения графика
@@ -2169,9 +4911,9 @@ def graph_contingency_tables_bar_freqint(
     
     # создание рисунка (Figure) и области рисования (Axes)
     graph_size_dict = {
-        1: (297/INCH*0.75, 210/INCH),
-        2: (297/INCH*1.5,  210/INCH),
-        3: (297/INCH*2.25, 210/INCH)}
+        1: (210/INCH*0.6, 297/INCH/2),
+        2: (210/INCH*1.2, 297/INCH/2),
+        3: (210/INCH*1.8, 297/INCH/2)}
     
     if not(graph_size):
         graph_size = graph_size_dict[count_graph]
@@ -2207,10 +4949,13 @@ def graph_contingency_tables_bar_freqint(
                 rot=0,
                 legend=True,
                 ax=ax1)
-        ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+        ax1.legend(loc='best', fontsize = legend_fontsize, \
+                   title=data_df_abs.columns.name)
         ax1.set_title('Absolute values', fontsize=title_axes_fontsize)
         ax1.set_xlabel(x_label, fontsize = label_fontsize)
         ax1.set_ylabel(y_label, fontsize = label_fontsize)
+        ax1.tick_params(labelsize = tick_fontsize)
+        ax1.yaxis.grid()
             
     # столбчатая диаграмма (относительные частоты)
     if 'r' in graph_inclusion:
@@ -2227,7 +4972,8 @@ def graph_contingency_tables_bar_freqint(
                 stacked=True,
                 rot=0,
                 legend=True,
-                ax = ax1 if (graph_inclusion == 'r') or (graph_inclusion == 'rf') else ax2,
+                ax = ax1 if ((graph_inclusion == 'r') or 
+                             (graph_inclusion == 'rf')) else ax2,
                 alpha = 0.5)
         else:
             data_df_rel.plot.bar(
@@ -2235,19 +4981,26 @@ def graph_contingency_tables_bar_freqint(
                 stacked=True,
                 rot=0,
                 legend=True,
-                ax = ax1 if (graph_inclusion == 'r') or (graph_inclusion == 'rf') else ax2,
+                ax = ax1 if ((graph_inclusion == 'r') or 
+                             (graph_inclusion == 'rf')) else ax2,
                 alpha = 0.5)
         
         if (graph_inclusion == 'r') or (graph_inclusion == 'rf'):
-            ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax1.legend(loc='best', fontsize = legend_fontsize, \
+                       title=data_df_abs.columns.name)
             ax1.set_title('Relative values', fontsize=title_axes_fontsize)
             ax1.set_xlabel(x_label, fontsize = label_fontsize)
             ax1.set_ylabel(y_label, fontsize = label_fontsize)
+            ax1.tick_params(labelsize = tick_fontsize)
+            ax1.yaxis.grid()
         else:
-            ax2.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
+            ax2.legend(loc='best', fontsize = legend_fontsize, \
+                       title=data_df_abs.columns.name)
             ax2.set_title('Relative values', fontsize=title_axes_fontsize)
             ax2.set_xlabel(x_label, fontsize = label_fontsize)
             ax2.set_ylabel(y_label, fontsize = label_fontsize)
+            ax2.tick_params(labelsize = tick_fontsize)
+            ax2.yaxis.grid()
                             
     # график взаимодействия частот
     if 'f' in graph_inclusion:
@@ -2259,7 +5012,8 @@ def graph_contingency_tables_bar_freqint(
                 lw=3,
                 #markers=['o','o'],
                 markersize=10,
-                ax=ax1 if (graph_inclusion == 'f') else ax3 if (graph_inclusion == 'arf') else ax2)
+                ax = ax1 if (graph_inclusion == 'f') else \
+                    ax3 if (graph_inclusion == 'arf') else ax2)
         else:
             sns.lineplot(
                 data=data_df_abs,
@@ -2268,23 +5022,36 @@ def graph_contingency_tables_bar_freqint(
                 lw=3,
                 #markers=['o','o'],
                 markersize=10,
-                ax=ax1 if (graph_inclusion == 'f') else ax3 if (graph_inclusion == 'arf') else ax2)
+                ax = ax1 if (graph_inclusion == 'f') else \
+                    ax3 if (graph_inclusion == 'arf') else ax2)
         
         if (graph_inclusion == 'f'):
-            ax1.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
-            ax1.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax1.legend(loc='best', fontsize = legend_fontsize, \
+                       title=data_df_abs.columns.name)
+            ax1.set_title('Graph of frequency interactions', \
+                          fontsize=title_axes_fontsize)
             ax1.set_xlabel(x_label, fontsize = label_fontsize)
             ax1.set_ylabel(y_label, fontsize = label_fontsize)
+            ax1.tick_params(labelsize = tick_fontsize)
+            ax1.yaxis.grid()
         elif (graph_inclusion == 'arf'):
-            ax3.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
-            ax3.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax3.legend(loc='best', fontsize = legend_fontsize, \
+                       title=data_df_abs.columns.name)
+            ax3.set_title('Graph of frequency interactions', \
+                          fontsize=title_axes_fontsize)
             ax3.set_xlabel(x_label, fontsize = label_fontsize)
             ax3.set_ylabel(y_label, fontsize = label_fontsize)
+            ax3.tick_params(labelsize = tick_fontsize)
+            ax3.yaxis.grid()
         else:
-            ax2.legend(loc='best', fontsize = 12, title=data_df_abs.columns.name)
-            ax2.set_title('Graph of frequency interactions', fontsize=title_axes_fontsize)
+            ax2.legend(loc='best', fontsize = legend_fontsize, \
+                       title=data_df_abs.columns.name)
+            ax2.set_title('Graph of frequency interactions', \
+                          fontsize=title_axes_fontsize)
             ax2.set_xlabel(x_label, fontsize = label_fontsize)
             ax2.set_ylabel(y_label, fontsize = label_fontsize)
+            ax2.tick_params(labelsize = tick_fontsize)
+            ax2.yaxis.grid()
     
     # автоматическая настройка плотной компоновки графика
     if tight_layout:
@@ -2312,53 +5079,132 @@ def graph_contingency_tables_bar_freqint(
 
 
 
-
-
 #------------------------------------------------------------------------------
-#   graph_contingency_tables_heatmap
+#   Функция graph_contingency_tables_heatmap
+#   
+#   Визуализация категориальных данных: построение графика тепловой карты
 #------------------------------------------------------------------------------
 
 def graph_contingency_tables_heatmap(
-    data_df_in: pd.core.frame.DataFrame = None,
-    data_XY_list_in: list = None,
-    title_figure = None, title_figure_fontsize = 12,
-    title_axes = None, title_axes_fontsize = 14,
-    x_label = None, y_label = None, #label_fontsize = 11, 
-    x_ticklabels_list = None, y_ticklabels_list = None, #tick_fontsize = 11,
-    values_type = 'absolute',
-    color_map='binary',
-    robust = False,
-    fmt = '.0f',
-    tight_layout=True,
+    data_df_in:               pd.core.frame.DataFrame = None,
+    data_XY_list_in:          list = None,
+    title_figure:             str = None, 
+    title_figure_fontsize:    int = 10,
+    title_axes:               str = None, 
+    title_axes_fontsize:      int = 12,
+    x_label                   = None, 
+    y_label                   = None, 
+    label_fontsize:           int = 10, 
+    x_ticklabels_list:        list = None, 
+    y_ticklabels_list:        list = None, 
+    tick_fontsize:            int = 8,
+    annot_fontsize:           int = 8,
+    colorbar_fontsize:        int = 8,
+    values_type:              str = 'absolute',
+    color_map:                str = 'binary',
+    robust:                   bool = False,
+    fmt:                      str = '.0f',
+    tight_layout:             bool =True,
     #result_output = False,
-    graph_size = (297/INCH/2, 210/INCH/2),
-    file_name = None):
+    graph_size:               tuple = (210/INCH, 297/INCH/2),
+    file_name:                str = None):
     
-    """Функция для визуализации категориальных данных: построение графика тепловой карты (heatmap)
+    """
+    Визуализация категориальных данных построение графика тепловой карты 
+    (heatmap).
 
     Args:
-        data_df_in (pd.core.frame.DataFrame, optional): Массив исходных данных (тип - DataFrame). Defaults to None.
-        data_XY_list_in (list, optional):               Массив исходных данных (тип - list). Defaults to None.
-        title_figure (_type_, optional):                Заголовок рисунка (Figure). Defaults to None.
-        title_figure_fontsize (int, optional):          Размер шрифта заголовка рисунка (Figure). Defaults to 12.
-        title_axes (_type_, optional):                  Заголовок области рисования (Axes). Defaults to None.
-        title_axes_fontsize (int, optional):            Размер шрифта заголовка области рисования (Axes). Defaults to 14.
-        x_label (_type_, optional):                     Подпись оси OX. Defaults to None.
-        y_label (_type_, optional):                     Подпись оси OY. Defaults to None.
-        label_fontsize (int, optional):                 Временно заблокировано. Defaults to 11.
-        x_ticklabels_list (_type_, optional):           Список меток для оси OX. Defaults to None.
-        y_ticklabels_list (_type_, optional):           Список меток для оси OY. Defaults to None.
-        tick_fontsize (int, optional):                  Временно заблокировано. Defaults to 11.
-        values_type (str, optional):                    Параметр, задающий в каких частотах строится график:
-                                                            абсолютные/относительные, absolute/relative.
-                                                            Defaults to 'absolute'.
-        color_map (str, optional):                      Цветовая карта (colormap) для графика. Defaults to 'binary'.
-        robust (bool, optional):                        Если True и vmin или vmax отсутствуют, диапазон цветовой карты вычисляется
-                                                            с надежными квантилями вместо экстремальных значений. Defaults to False.
-        fmt (str, optional):                            Числовой формат подписей в центре плиток графика. Defaults to '.0f'.
-        tight_layout (bool, optional):                  Автоматическая настройка плотной компоновки графика (да/нет, True/False). Defaults to True.
-        graph_size (tuple, optional):                   Размера графика. Defaults to (297/INCH/2, 210/INCH/2).
-        file_name (_type_, optional):                   Имя файла для сохранения на диске. Defaults to None.
+        data_df_in (pd.core.frame.DataFrame, optional): 
+            массив исходных данных. 
+            Defaults to None.
+            
+        data_XY_list_in (list, optional):               
+            массив исходных данных. 
+            Defaults to None.
+            
+        title_figure (str, optional):             
+            заголовок рисунка (Figure). 
+            Defaults to None.
+            
+        title_figure_fontsize (int, optional):    
+            размер шрифта заголовка рисунка (Figure). 
+            Defaults to 10.
+            
+        title_axes (str, optional):               
+            заголовок области рисования (Axes). 
+            Defaults to None.
+        
+        title_axes_fontsize (int, optional):      
+            размер шрифта заголовка области рисования (Axes). 
+            Defaults to 12.
+            
+        x_label (str, optional):
+            подпись оси OX. 
+            Defaults to None.
+            
+        y_label (str, optional):                     
+            подпись оси OY. 
+            Defaults to None.
+            
+        label_fontsize (int, optional):                 
+            временно заблокировано. Defaults to 10.
+            
+        x_ticklabels_list (list, optional):           
+            список меток для оси OX. 
+            Defaults to None.
+            
+        y_ticklabels_list (list, optional):           
+            список меток для оси OY. 
+            Defaults to None.
+            
+        tick_fontsize (int, optional):
+            размер шрифта меток осей. 
+            Defaults to 8.
+            
+        annot_fontsize (int, optional):       
+            размер шрифта подписей в центре плиток графика. 
+            Defaults to 8.
+            
+        colorbar_fontsize (int, optional):       
+            размер шрифта подписей цветовой полосы. 
+            Defaults to 8.
+            
+        values_type (str, optional):                    
+            параметр, задающий в каких частотах строится график:     
+                абсолютные/относительные, absolute/relative.     
+                Defaults to 'absolute'.
+                
+        color_map (str, optional):                      
+            цветовая карта (colormap) для графика. 
+            Defaults to 'binary'.
+            
+        robust (bool, optional):                        
+            логический параметр: если True и vmin или vmax отсутствуют, 
+            диапазон цветовой карты вычисляется с надежными квантилями 
+            вместо экстремальных значений. 
+            Defaults to False.
+            
+        fmt (str, optional):                            
+            числовой формат подписей в центре плиток графика. 
+            Defaults to '.0f'.
+        
+        tight_layout (bool, optional):                  
+            логический параметр: автоматическая настройка плотной компоновки 
+            графика (да/нет, True/False). 
+            Defaults to True.
+        
+        graph_size (tuple, optional):             
+            размер графика в дюймах. 
+            Defaults to (210/INCH, 297/INCH/2), 
+                где константа INCH = 25.4 мм/дюйм.
+                
+        file_name (str, optional):                
+            имя файла для сохранения на диске. 
+            Defaults to None.
+    
+    Returns:
+        None
+        
     """
     
     # создание рисунка (Figure) и области рисования (Axes)
@@ -2403,6 +5249,7 @@ def graph_contingency_tables_heatmap(
                 fmt=fmt,
                 annot=True,
                 cmap=color_map,
+                annot_kws = {"fontsize": annot_fontsize},
                 ax=axes)
         else:
             sns.heatmap(data_df.transpose(),
@@ -2413,6 +5260,7 @@ def graph_contingency_tables_heatmap(
                 fmt=fmt,
                 annot=True,
                 cmap=color_map,
+                annot_kws = {"fontsize": annot_fontsize},
                 ax=axes)
     else:
         if not robust: 
@@ -2423,6 +5271,7 @@ def graph_contingency_tables_heatmap(
                 fmt=fmt,
                 annot=True,
                 cmap=color_map,
+                annot_kws = {"fontsize": annot_fontsize},
                 ax=axes)
         else:
             sns.heatmap(data_df_rel.transpose(),
@@ -2433,8 +5282,14 @@ def graph_contingency_tables_heatmap(
                 fmt=fmt,
                 annot=True,
                 cmap=color_map,
+                annot_kws = {"fontsize": annot_fontsize},
                 ax=axes)
     
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.figure.axes[-1].yaxis.set_tick_params(labelsize = colorbar_fontsize)
+            
     # автоматическая настройка плотной компоновки графика
     if tight_layout:
         fig.tight_layout()
@@ -2447,820 +5302,767 @@ def graph_contingency_tables_heatmap(
     return
 
 
-
 #------------------------------------------------------------------------------
-#   old Функция conjugacy_table_2x2_coefficient
-#------------------------------------------------------------------------------
-
-def conjugacy_table_2x2_independence_check (X, p_level=0.95):
-    a_level = 1 - p_level
-    data = np.array(X)  
-    a = data[0][0]
-    b = data[0][1]
-    c = data[1][0]
-    d = data[1][1]
-    n = a + b + c + d
-    
-    u_p = sps.norm.ppf((1 + p_level)/2, 0, 1)    # табл.значение квантиля норм.распр.
-    #print(u_p)
-    
-       
-    # Коэффициент ассоциации Юла
-    Q_calc = (a*d - b*c) / (a*d + b*c)    # расчетное значение коэффициента
-    DQ = 1/4 * (1-Q_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
-    Q_crit = u_p * sqrt(DQ)    # критическое значение коэффициента
-    conclusion_Q = 'significant' if abs(Q_calc) >= Q_crit else 'not significant'        
-    
-    # Коэффициент коллигации Юла
-    Y_calc = (sqrt(a*d) - sqrt(b*c)) / (sqrt(a*d) + sqrt(b*c))   # расчетное значение коэффициента
-    DY = 1/16 * (1-Y_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
-    Y_crit = u_p * sqrt(DY)    # критическое значение коэффициента
-    conclusion_Y = 'significant' if abs(Y_calc) >= Y_crit else 'not significant'
-    
-    # Коэффициент контингенции Пирсона
-    V_calc = (a*d - b*c) / sqrt((a + b)*(a + c)*(b + d)*(c + d))   # расчетное значение коэффициента
-    DV = 1/n * (1-V_calc**2) + \
-        1/n * (V_calc + 1/2 * V_calc**2) * ((a-d)**2 - (b-c)**2)/sqrt((a+b)*(a+c)*(b+d)*(c+d)) - \
-            3/(4*n)*V_calc**2 * (((a+b-c-d)**2 / ((a+b)*(c+d))) - ((a+c-b-d)**2 / ((a+c)*(b+d))))    # дисперсия
-    V_crit = u_p * sqrt(DV)    # критическое значение коэффициента
-    conclusion_V = 'significant' if abs(V_calc) >= V_crit else 'not significant'
-    
-    # градация значений коэффициентов
-    # шкала Эванса 1996 г. для психосоциальных исследований (https://medradiol.fmbafmbc.ru/journal_medradiol/abstracts/2019/6/12-24_Koterov_et_al.pdf)
-    #strength of relationship
-    check_Evans_scale = lambda r, measure_of_association: '-' if measure_of_association == 'not significant' else\
-        'very weak' if abs(r) < 0.2 else \
-            'weak' if abs(r) < 0.4 else \
-                'moderate' if abs(r) < 0.6 else \
-                    'strong' if abs(r) < 0.8 else \
-                        'very strong'
-    
-    # Создадим DataFrame для сводки результатов
-    coefficient = np.array([Q_calc, Y_calc, V_calc])
-    critical_value = (Q_crit, Y_crit, V_crit)
-    measure_of_association = (conclusion_Q, conclusion_Y, conclusion_V)
-    strength_of_relationship = np.vectorize(check_Evans_scale)(coefficient, measure_of_association)
-    
-    func_of_measure = lambda value, measure_of_association: value if measure_of_association == 'significant' else '-'
-    confidence_interval_min = func_of_measure(coefficient - critical_value, measure_of_association)
-    confidence_interval_max = func_of_measure(coefficient + critical_value, measure_of_association)
-                
-    result = pd.DataFrame({
-        'test': (
-            'Yule’s Coefficient of Association (Q)',
-            'Yule’s Coefficient of Colligation (Y)',
-            "Pearson's contingency coefficient (V)"),
-        'p_level': (p_level),
-        'a_level': (a_level),
-        'coefficient': coefficient,
-        'critical_value': critical_value,
-        '|coefficient| >= critical_value': (abs(coefficient) >= critical_value),
-        'measure of association': (measure_of_association),
-        'strength of relationship (Evans scale)': (strength_of_relationship),
-        'confidence interval min': (confidence_interval_min),
-        'confidence interval max': (confidence_interval_max)
-        })
-    return result
-
- 
-
-#------------------------------------------------------------------------------
-#   old Функция conjugacy_table_IxJ_independence_check
+#   Функция conjugacy_table_independence_check
+#   
+#   Проверка значимости связи между категориальными признаками 
+#   в таблицах сопряженности
 #------------------------------------------------------------------------------
 
-def conjugacy_table_IxJ_independence_check (X_in, p_level=0.95):
-    a_level = 1 - p_level
-    X = np.array(X_in)
-    #print(X, '\n')
-    result = []
+def conjugacy_table_independence_check(    
+    data,
+    p_level:                         float = 0.95,
+    methods:                         list = ['all'],
+    correction_for_continuity_OR:    bool = False,
+    logarithmic_method_OR:           bool = False,
+    scale: str =                     'Rea&Parker',    
+    expected_freq:                   bool = False):
     
+    """
+    Проверка значимости связи между категориальными
+    признаками в таблицах сопряженности.
+    
+    Args:
+        data (pd.core.frame.DataFrame, numpy.ndarray):    
+            массив исходных данных.
+            
+        p_level (float, optional):                        
+            доверительная вероятность. 
+            Defaults to 0.95.
+            
+        methods (list, optional):                         
+            список применяемых методов:  
+                ['simple', 'odds ratio', 'chi2', 'chi2 coef', 'Fisher', 
+                 'Barnard', 'Boschloo'] or ['all]. 
+                Defaults to ['all]
+                             
+        correction_for_continuity_OR (bool, optional)     
+            логический параметр: True/False - использовать/не использовать  
+            для показателя odds ratio поправку на непрерывность 
+            (наличие ячеек с нулевыми частотами).   
+            Defaults to False.
+            
+        logarithmic_method_OR (bool, optional)            
+            логический параметр: True/False - использовать/не использовать 
+            для показателя odds ratio логарифмический метод при расчете 
+            критических значений.     
+            Defaults to False.
+            
+        scale (str, optional):                            
+            вид шкалы для оценки тесноты связи 
+            {'Cheddock', 'Evans', 'Rea&Parker'}.
+            Defaults to 'Rea&Parker'.
+            
+        expected_freq (bool, optional):                   
+            логический параметр: True/False - выводить/не выводить таблицу 
+            теоретических частот.     
+            Defaults to False.
+
+    Returns:
+        result_general (pd.core.frame.DataFrame):
+            результат            
+            
+    """
+    
+    # особенность аргумента по умолчанию, который является списком (list)
+    methods = methods or []    
+    
+    a_level = 1 - p_level   
+    
+    # исходные данные
+    X = np.round(np.array(data))
+           
     # параметры таблицы сопряженности
     N_rows = X.shape[0]
     N_cols = X.shape[1]
     N = X.size
     X_sum = np.sum(X)
     
-    # проверка условия размерности таблицы 2х2
-    check_condition_2x2 = True if (N_rows == 2 and N_cols == 2) else False
-        
-    # проверка условий применимости критерия хи-квадрат
-    check_condition_chi2_1 = check_condition_chi2_2 = True
-    note_condition_chi2_1 = note_condition_chi2_2 = ''
-        
-    if X_sum < 50:
-        check_condition_chi2_1 = False
-        note_condition_chi2_1 = 'sample size less than 50'
-                    
-    if check_condition_2x2:
-        if np.size(np.where(X.ravel() < 5)):    # Функция np.ravel() преобразует матрицу в одномерный вектор
-            check_condition_chi2_2 = False
-            note_condition_chi2_2 = 'frequency less than 5'
-    else:
-        if np.size(np.where(X.ravel() < 3)):
-            check_condition_chi2_2 = False
-            note_condition_chi2_2 = 'frequency less than 3'
+    # фактические частоты для таблиц 2х2
+    a = X[0][0]
+    b = X[0][1]
+    c = X[1][0]
+    d = X[1][1]
+    n = a + b + c + d   
     
     # ожидаемые частоты и предельные суммы
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.expected_freq.html
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.margins.html
+    result_expected_freq = sci.stats.contingency.expected_freq(X)
+    X_expected = np.array(result_expected_freq)
     
-    
-    # критерий хи-квадрат (без поправки Йетса)
-    # https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
-    s_calc_chi2 = '-'
-    critical_value_chi2 = '-'
-    significance_check_chi2_s = '-'
-    a_calc_chi2 = '-'
-    significance_check_chi2_a = '-'
-    
-    if check_condition_chi2_1 and check_condition_chi2_2:
-        (s_calc_chi2, p_chi2, dof_chi2, ex_chi2) = sci.stats.chi2_contingency(X, correction=False)
-        critical_value_chi2 = sci.stats.chi2.ppf(p_level, dof_chi2)
-        significance_check_chi2_s = s_calc_chi2 >= critical_value_chi2
-        a_calc_chi2 = p_chi2
-        # альтернативный расчет: a_calc_chi2 = 1 - sci.stats.chi2.cdf(s_calc_chi2, dof_chi2)
-        significance_check_chi2_a = a_calc_chi2 <= a_level
-        conclusion_chi2 = 'categories are not independent' if significance_check_chi2_s else 'categories are independent'
-    else:
-        conclusion_chi2 = note_condition_chi2_1 + ' ' + note_condition_chi2_2
+    # табл.значение квантиля норм.распр.
+    u_p = sps.norm.ppf((1 + p_level)/2, 0, 1)
         
-    # критерий хи-квадрат (с поправкой Йетса) (только для таблиц 2х2)
-    # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
-    # https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0_%D0%99%D0%B5%D0%B9%D1%82%D1%81%D0%B0
-    s_calc_chi2_Yates = '-'
-    critical_value_chi2_Yates = '-'
-    significance_check_chi2_s_Yates = '-'
-    a_calc_chi2_Yates = '-'
-    significance_check_chi2_a_Yates = '-'
+    # проверка условия размерности таблицы 2х2
+    check_condition_2x2 = True if (N_rows == 2 and N_cols == 2) else False
     
+    # проверка условий применимости критерия хи-квадрат
+    # expected frequency less than 5 or 10
+    check_condition_chi2_1 = True
+    # proportion of cells with expected frequencies less than 5 is more than 20%
+    check_condition_chi2_2 = True
+    # sample size less than 30
+    check_condition_chi2_3 = True
+    # math domain error: expected frequency is 0
+    check_condition_chi2_4 = True
+    note_condition_chi2_1 = note_condition_chi2_2 = note_condition_chi2_3 = \
+        note_condition_chi2_4 = ''
+        
+    if np.size(np.where(X.ravel() == 0)):    
+            check_condition_chi2_4 = False
+            note_condition_chi2_4 = 'expected frequency is 0 (math domain error)'
+            
     if check_condition_2x2:
-        if check_condition_chi2_1 and check_condition_chi2_2:
-            (s_calc_chi2_Yates, p_chi2_Yates, dof_chi2_Yates, ex_chi2_Yates) = sci.stats.chi2_contingency(X, correction=True)
-            critical_value_chi2_Yates = sci.stats.chi2.ppf(p_level, dof_chi2_Yates)
-            significance_check_chi2_s_Yates = s_calc_chi2_Yates >= critical_value_chi2_Yates
+        # Функция np.ravel() преобразует матрицу в одномерный вектор
+        if np.size(np.where(X_expected.ravel() < 5)):    
+            check_condition_chi2_1 = False
+            note_condition_chi2_1 = 'expected frequency less than 5'
+    else:
+        if np.size(np.where(X_expected.ravel() < 10)):
+            check_condition_chi2_1 = False
+            note_condition_chi2_1 = 'expected frequency less than 10'
+    
+    if not check_condition_2x2:
+        # число ячеек с ожидаемым числом наблюдений менее 5
+        N_expected_to_5 = np.count_nonzero(X_expected < 5)    
+        if N_expected_to_5 / X_expected.size > 0.2:
+            check_condition_chi2_2 = False
+            note_condition_chi2_2 = \
+                'proportion of cells with expected frequencies ' + \
+                    'less than 5 is more than 20%'
+                
+    if X_sum < 30:
+        check_condition_chi2_3 = False
+        note_condition_chi2_3 = 'sample size less than 30'            
+    
+    # обработка ошибок
+    try:
+        if scale not in ['Cheddock', 'Evans', 'Rea&Parker']:
+            note_error = \
+                'Error! "scale" must be in ["Cheddock", "Evans", "Rea&Parker"]'
+            raise ValueError(note_error)
+    except ValueError as err:
+        print(err)
+    #    #(result, result_expected_freq) = (None, None)
+    #    if not expected_freq:
+    #        return None
+    #    else:
+    #        return (None, None)
+        
+    # оценка тесноты связи
+    def scale_check(scale, coef_value):
+        scale_func_dict = {
+            'Cheddok': Cheddock_scale_check(coef_value),
+            'Evans': Evans_scale_check(coef_value),
+            "Rea&Parker": Rea_Parker_scale_check(coef_value)}
+        result = scale_func_dict[scale] if (scale in scale_func_dict.keys()) \
+            else '-'
+        return result
+    
+    
+    # BLOCK 0
+    # -------
+    
+    # список для выдачи результата
+    result_general = list()
+    
+    result_0 = pd.DataFrame({
+        'p_level': p_level,
+        'a_level': a_level,},
+        index=[''])
+    
+    result_general.append(result_0)
+    
+    
+    # BLOCK 1: simple methods
+    # -----------------------
+    
+    if (('simple' in methods) or (methods == ['all'])) and check_condition_2x2:
+        
+        # коэффициент ассоциации Юла
+        Q_calc = (a*d - b*c) / (a*d + b*c)
+        D_Q = 1/4 * (1-Q_calc**2)**2 * (1/a + 1/b + 1/c + 1/d)
+        ASE_Q = sqrt(D_Q)
+        Z_Q = abs(Q_calc) / ASE_Q
+        Q_crit = u_p * ASE_Q
+        a_calc_Q = (1 - sci.stats.norm.cdf(Z_Q, loc=0, scale=1))*2
+        conclusion_Q = 'significant' if abs(Q_calc) >= Q_crit \
+            else 'not significant'        
+    
+        # коэффициент коллигации Юла
+        Y_calc = (sqrt(a*d) - sqrt(b*c)) / (sqrt(a*d) + sqrt(b*c))
+        D_Y = 1/16 * (1-Y_calc**2)**2 * (1/a + 1/b + 1/c + 1/d)
+        ASE_Y = sqrt(D_Y)
+        Z_Y = abs(Y_calc) / ASE_Y
+        Y_crit = u_p * ASE_Y
+        a_calc_Y = (1 - sci.stats.norm.cdf(Z_Y, loc=0, scale=1))*2
+        conclusion_Y = 'significant' if abs(Y_calc) >= Y_crit \
+            else 'not significant'
+    
+        # коэффициент контингенции Пирсона
+        V_calc = (a*d - b*c) / sqrt((a + b)*(a + c)*(b + d)*(c + d))
+        D_V = 1/n * (1-V_calc**2) + \
+            1/n * (V_calc + 1/2 * V_calc**2) * ((a-d)**2 - \
+                (b-c)**2)/sqrt((a+b)*(a+c)*(b+d)*(c+d)) - \
+                    3/(4*n)*V_calc**2 * (((a+b-c-d)**2 / ((a+b)*(c+d))) \
+                                         - ((a+c-b-d)**2 / ((a+c)*(b+d))))
+        ASE_V = sqrt(D_V)
+        Z_V = abs(V_calc) / ASE_V
+        V_crit = u_p * sqrt(D_V)
+        a_calc_V = (1 - sci.stats.norm.cdf(Z_V, loc=0, scale=1))*2
+        conclusion_V = 'significant' if abs(V_calc) >= V_crit \
+            else 'not significant'
+    
+        # сводка результатов
+        notation_list = ('Q', 'Y', 'V')
+        coef_value_list = np.array([Q_calc, Y_calc, V_calc])
+        ASE_list = np.array([ASE_Q, ASE_Y, ASE_V])
+        critical_value_list = (Q_crit, Y_crit, V_crit)
+        a_calc_list = (a_calc_Q, a_calc_Y, a_calc_V)
+        significance_check_list = (conclusion_Q, conclusion_Y, conclusion_V)
+    
+        # доверительные интервалы
+        #func_of_significance = lambda value, significance_check: value if significance_check == 'significant' else '-'
+        conf_int_low_list = coef_value_list - ASE_list*u_p
+        conf_int_low_high = coef_value_list + ASE_list*u_p
+    
+        # оценка тесноты связи
+        if scale=='Evans':
+            scale_list = np.vectorize(Evans_scale_check)(coef_value_list, \
+                                                         notation_list)
+        elif scale=='Cheddock':
+            scale_list = np.vectorize(Cheddock_scale_check)(coef_value_list, \
+                                                            notation_list)
+        elif scale=='Rea&Parker':
+            scale_list = np.vectorize(Rea_Parker_scale_check)(coef_value_list,\
+                                                              notation_list)
+        else:
+            scale_list = np.vectorize(Rea_Parker_scale_check)(coef_value_list,\
+                                                              ('error'))
+        
+        # Создадим DataFrame для сводки результатов
+        scale_name = f'{scale} scale'
+        result_1 = pd.DataFrame({
+            'name': (
+                'Yule’s Coefficient of Association',
+                'Yule’s Coefficient of Colligation',
+                'Pearson’s contingency coefficient'),
+            'notation': notation_list,
+            #'p_level': (p_level),
+            #'a_level': (a_level),
+            'coef_value': coef_value_list,
+            'ASE': ASE_list,
+            'crit_value': critical_value_list,
+            '|coef_value| >= crit_value': (abs(coef_value_list) >= \
+                                           critical_value_list),
+            'a_calc': a_calc_list,
+            'a_calc <= a_level': (elem <= a_level for elem in a_calc_list),
+            'significance_check': significance_check_list,
+            'conf_int_low': conf_int_low_list,
+            'conf_int_high': conf_int_low_high,
+            scale_name: scale_list
+            }) 
+        
+        result_general.append(result_1)
+        
+    else:
+        if not check_condition_2x2:
+            note = "Yule’s Coefficient of Association (Q), " + \
+                "Yule’s Coefficient of Colligation (Y) and " + \
+                "Pearson’s contingency coefficient (V) " + \
+                "cannot be calculated: the size of the table is not 2*2"
+            print(note)
+            
+            
+    # BLOCK 2: odds ratio
+    # -------------------
+    
+    if (('odds ratio' in methods) \
+        or (methods == ['all'])) and check_condition_2x2:
+        
+        # отношение шансов (odds ratio)
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.odds_ratio.html
+        res_OR = sps.contingency.odds_ratio(X)
+        OR_calc = res_OR.statistic
+        OR_ci = res_OR.confidence_interval(confidence_level = p_level)
+        #print(OR_ci)
+        
+        #OR_calc = (a/b)/(c/d) if not correction_for_continuity_OR else ((a+0.5)/(b+0.5))/((c+0.5)/(d+0.5))
+        D_OR = (OR_calc**2) * (1/a + 1/b + 1/c + 1/d) \
+            if not correction_for_continuity_OR \
+                else (OR_calc**2) * \
+                    (1/(a+0.5) + 1/(b+0.5) + 1/(c+0.5) + 1/(d+0.5))
+        ASE_OR = np.sqrt(D_OR)
+        
+        if logarithmic_method_OR:
+            D_lnOR = (1/a + 1/b + 1/c + 1/d) \
+                if not correction_for_continuity_OR \
+                    else (1/(a+0.5) + 1/(b+0.5) + 1/(c+0.5) + 1/(d+0.5))
+            ASE_lnOR = np.sqrt(D_lnOR)
+            Z_lnOR = abs(np.log(OR_calc) / ASE_lnOR)
+            lnOR_crit = u_p * sqrt(D_lnOR)
+            a_calc_lnOR = (1 - sci.stats.norm.cdf(Z_lnOR, loc=0, scale=1))*2
+            conclusion_lnOR = 'significant' \
+                if abs(np.log(OR_calc)) >= lnOR_crit else 'not significant'
+        else:
+            Z_OR = abs(OR_calc / ASE_OR)
+            OR_crit = u_p * sqrt(D_OR)
+            a_calc_OR = (1 - sci.stats.norm.cdf(Z_OR, loc=0, scale=1))*2
+            conclusion_OR = 'significant' \
+                if OR_calc >= OR_crit else 'not significant'
+        
+        # оценка связи - отношение шансов (odds ratio)
+        connection_type_OR = 'negative connection' \
+            if OR_calc < 1 else 'positive connection' \
+                if OR_calc > 1 else 'no connection'
+        
+        # сводка результатов
+        notation_list = ('OR')
+        coef_value_list = (OR_calc)
+        if logarithmic_method_OR:
+            ln_coef_value_list = (np.log(OR_calc))
+            ASE_ln_list = (ASE_lnOR)            
+            critical_ln_value_list = (lnOR_crit)
+            a_calc_ln_list = (a_calc_lnOR)
+        else:
+            ASE_list = (ASE_OR)
+            critical_value_list = (OR_crit)
+            a_calc_list = (a_calc_OR)
+        significance_check_list = (conclusion_OR) \
+            if not logarithmic_method_OR else (conclusion_lnOR)
+    
+        # доверительные интервалы
+        conf_int_low_list = (OR_ci.low)
+        conf_int_high_list = (OR_ci.high)
+        
+        '''if logarithmic_method_OR:
+            conf_int_low_list = (np.exp(np.log(OR_calc) - ASE_lnOR*u_p), '-')
+            conf_int_high_list = (np.exp(np.log(OR_calc) + ASE_lnOR*u_p), '-')
+        else:
+            conf_int_low_list = (OR_calc - ASE_OR*u_p, '-')
+            conf_int_high_list = (OR_calc + ASE_OR*u_p, '-')'''
+                
+        # Создадим DataFrame для сводки результатов
+        if not logarithmic_method_OR:
+            result_2 = pd.DataFrame({
+                'name': ('Odds ratio'),
+                'notation':                            notation_list,
+                #'p_level':                            (p_level),
+                #'a_level':                            (a_level),
+                'calc_value':                          coef_value_list,
+                'connection_type':                     (connection_type_OR),
+                'ASE':                                 ASE_list,
+                'crit_value':                          critical_value_list,
+                '|calc_value| >= crit_value':          (OR_calc >= OR_crit),
+                'a_calc':                              a_calc_list,
+                'a_calc <= a_level':                   (a_calc_list <= a_level),
+                'significance_check':                  significance_check_list,
+                'conf_int_low':                        conf_int_low_list,
+                'conf_int_high':                       conf_int_high_list
+                },
+                index=[0])
+            
+        else:
+            result_2 = pd.DataFrame({
+                'name': ('Odds ratio'),
+                'notation':                                notation_list,
+                #'p_level':                                 (p_level),
+                #'a_level':                                 (a_level),
+                'calc_value':                              coef_value_list,
+                'connection_type':                         (connection_type_OR),
+                'ASE(ln(calc_value))':                     ASE_ln_list,
+                'crit_ln(calc_value)':\
+                     critical_ln_value_list,
+                '|ln(calc_value)| >= crit_ln(calc_value)': \
+                    (np.log(OR_calc) >= lnOR_crit),
+                'a_calc':                                  a_calc_ln_list,
+                'a_calc <= a_level':\
+                       (a_calc_ln_list <= a_level),
+                'significance_check':\
+                      significance_check_list,
+                'conf_int_low':                            conf_int_low_list,
+                'conf_int_high':                           conf_int_high_list
+                },
+                index=[0])
+    
+        result_general.append(result_2)            
+        
+    else:
+        if not check_condition_2x2:
+            note = 'Odds ratio (OR) and relative risk (RR) ' + \
+                'cannot be calculated: the size of the table is not 2*2'
+            print(note)
+    
+    
+    # BLOCK 3: chi2 test
+    # ------------------
+    
+    if (('chi2' in methods) or (methods == ['all'])) and \
+        (check_condition_chi2_1 and check_condition_chi2_2 \
+         and check_condition_chi2_3 and check_condition_chi2_4):
+        
+        # критерий хи-квадрат (без поправки Йетса)
+        # https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
+        s_calc_chi2 = '-'
+        critical_value_chi2 = '-'
+        independence_check_chi2_s = '-'
+        a_calc_chi2 = '-'
+        independence_check_chi2_a = '-'
+        
+        if not check_condition_2x2:
+            (s_calc_chi2, p_chi2, dof_chi2, ex_chi2) = \
+                sci.stats.chi2_contingency(X, correction=False)
+            critical_value_chi2 = sci.stats.chi2.ppf(p_level, dof_chi2)
+            independence_check_chi2_s = s_calc_chi2 <= critical_value_chi2
+            a_calc_chi2 = p_chi2
+            # альтернативный расчет: a_calc_chi2 = 1 - sci.stats.chi2.cdf(s_calc_chi2, dof_chi2)
+            independence_check_chi2_a = a_calc_chi2 > a_level
+            conclusion_chi2 = 'categories are independent' if \
+                independence_check_chi2_s else 'categories are not independent'
+        else:
+            conclusion_chi2 = '2x2'
+            
+        # критерий хи-квадрат (с поправкой Йетса) (только для таблиц 2х2)
+        # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
+        # https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0_%D0%99%D0%B5%D0%B9%D1%82%D1%81%D0%B0
+        s_calc_chi2_Yates = '-'
+        critical_value_chi2_Yates = '-'
+        independence_check_chi2_s_Yates = '-'
+        a_calc_chi2_Yates = '-'
+        independence_check_chi2_a_Yates = '-'
+        
+        if check_condition_2x2:
+            (s_calc_chi2_Yates, p_chi2_Yates, dof_chi2_Yates, ex_chi2_Yates) =\
+                sci.stats.chi2_contingency(X, correction=True)
+            critical_value_chi2_Yates = \
+                sci.stats.chi2.ppf(p_level, dof_chi2_Yates)
+            independence_check_chi2_s_Yates = \
+                s_calc_chi2_Yates <= critical_value_chi2_Yates
             a_calc_chi2_Yates = p_chi2_Yates
-            significance_check_chi2_a_Yates = a_calc_chi2_Yates <= a_level
-            conclusion_chi2_Yates = 'categories are not independent' if significance_check_chi2_s_Yates else 'categories are independent'
+            independence_check_chi2_a_Yates = a_calc_chi2_Yates > a_level
+            conclusion_chi2_Yates = 'categories are independent' \
+                if independence_check_chi2_s_Yates \
+                    else 'categories are not independent'
         else:
-            conclusion_chi2_Yates = note_condition_chi2_1 + '   ' + note_condition_chi2_2                
-    else:
-        conclusion_chi2_Yates = 'not 2x2'
+            conclusion_chi2_Yates = 'not 2x2'
             
-    # относительный риск
-    # https://medstatistic.ru/methods/methods7.html
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.relative_risk.html#r092af754ff7d-1
-    
-    # точный критерий Фишера (Fisher's exact test) (односторонний)
-    # https://en.wikipedia.org/wiki/Fisher's_exact_test
-    # https://ru.wikipedia.org/wiki/%D0%A2%D0%BE%D1%87%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D1%81%D1%82_%D0%A4%D0%B8%D1%88%D0%B5%D1%80%D0%B0
-    # https://medstatistic.ru/methods/methods5.html
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fisher_exact.html
+        # критерий хи-квадрат (с поправкой на правдоподобие)
+        s_calc_chi2_likelihood = '-'
+        critical_value_chi2_likelihood = '-'
+        independence_check_chi2_s_likelihood = '-'
+        a_calc_chi2_likelihood = '-'
+        independence_check_chi2_a_likelihood = '-'
         
-    # точный критерий Фишера (Fisher's exact test) (двусторонний)
-    p_Fisher_two_sided = '-'
-    significance_check_Fisher_two_sided = '-'
-    a_calc_Fisher_two_sided = '-'
-    significance_check_Fisher_two_sided = '-'
-    conclusion_Fisher_two_sided = '-'
-    
-    if check_condition_2x2:
-        (oddsr_Fisher_two_sided, p_Fisher_two_sided) = sci.stats.fisher_exact(X, alternative='two-sided')
-        a_calc_Fisher_two_sided = p_Fisher_two_sided
-        significance_check_Fisher_two_sided = a_calc_Fisher_two_sided <= a_level
-        conclusion_Fisher_two_sided = 'categories are not independent' if significance_check_Fisher_two_sided else 'categories are independent'
-    else:
-        conclusion_Fisher_two_sided = 'not 2x2'
+        if check_condition_2x2:
+            E = np.array(sci.stats.chi2_contingency(X, correction=True)[3])
+        else:
+            E = np.array(sci.stats.chi2_contingency(X, correction=False)[3])
+        s_calc_chi2_likelihood = 2*np.sum([[X[i,j]*log(X[i,j]/E[i,j]) \
+            for j in range(N_cols)] for i in range(N_rows)])
+        df = (N_rows-1)*(N_cols-1)    
+        critical_value_chi2_likelihood = sci.stats.chi2.ppf(p_level, df)
+        independence_check_chi2_s_likelihood = \
+            s_calc_chi2_likelihood <= critical_value_chi2_likelihood
+        a_calc_chi2_likelihood = 1 - sci.stats.chi2.cdf(s_calc_chi2_likelihood,\
+                                                        df, loc=0, scale=1)
+        independence_check_chi2_a_likelihood = a_calc_chi2_likelihood > a_level
+        conclusion_chi2_likelihood = 'categories are independent' \
+            if independence_check_chi2_s_likelihood \
+                else 'categories are not independent'
             
-    # отношение шансов (odds ratio)
-    # https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D0%BD%D0%BE%D1%88%D0%B5%D0%BD%D0%B8%D0%B5_%D1%88%D0%B0%D0%BD%D1%81%D0%BE%D0%B2
-    odds_ratio_calc = '-'
-    significance_check_odds_ratio = '-'
-    a_calc_odds_ratio = '-'
-    significance_check_odds_ratio = '-'
-    conclusion_odds_ratio = '-'
-    
-    if check_condition_2x2:
-        odds_ratio_calc = oddsr_Fisher_two_sided
-    else:
-        conclusion_odds_ratio = 'not 2x2'
+            
+        # заполним DataFrame для сводки результатов тестов
+        result_3 = pd.DataFrame({
+            'test': (
+                'Chi-squared test',
+                "Chi-squared test (with Yates's correction for 2x2)",
+                "Likelihood-corrected Chi-squared test"),
+            #'p_level': (p_level),
+            # #'a_level': (a_level),
+            'statistic': [s_calc_chi2, s_calc_chi2_Yates, \
+                          s_calc_chi2_likelihood],
+            'critical_value': [critical_value_chi2, critical_value_chi2_Yates, \
+                               critical_value_chi2_likelihood],
+            'statistic <= critical_value': [independence_check_chi2_s, \
+                independence_check_chi2_s_Yates, \
+                    independence_check_chi2_s_likelihood],
+            'a_calc': [a_calc_chi2, a_calc_chi2_Yates, a_calc_chi2_likelihood],
+            'a_calc >= a_level': [independence_check_chi2_a, \
+                independence_check_chi2_a_Yates, \
+                    independence_check_chi2_a_likelihood],
+            'conclusion': [conclusion_chi2, conclusion_chi2_Yates, \
+                           conclusion_chi2_likelihood]
+            })   
         
-    # тест Барнарда 
-    # https://en.wikipedia.org/wiki/Barnard's_test
-    # https://wikidea.ru/wiki/Barnard%27s_test
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.barnard_exact.html
-    s_calc_Barnard = '-'
-    critical_value_Barnard = '-'
-    significance_check_Barnard = '-'
-    a_calc_Barnard = '-'
-    significance_check_Barnard = '-'
+        result_general.append(result_3)                 
+        
+    else:
+        if not (check_condition_chi2_1 and check_condition_chi2_2 and \
+                check_condition_chi2_3 and check_condition_chi2_4):
+            #note = 'The chi-square criterion is not applicable: ' + \
+            #    f'{note_condition_chi2_1}, {note_condition_chi2_2}, ' + \
+            #        f'{note_condition_chi2_3}, {note_condition_chi2_4}'
+            note = 'The chi-square criterion is not applicable: ' + \
+                (f'{note_condition_chi2_1}' if not check_condition_chi2_1 \
+                    else '') + \
+                (f'{note_condition_chi2_2}' if not check_condition_chi2_2 \
+                    else '') + \
+                (f'{note_condition_chi2_3}' if not check_condition_chi2_3 \
+                    else '') + \
+                (f'{note_condition_chi2_4}' if not check_condition_chi2_4 \
+                    else '')
+                            
+            print(note)
+        
+        
+    # BLOCK 4: chi2 coefficients
+    # --------------------------    
     
-    if check_condition_2x2:
+    if (('chi2 coef' in methods) or (methods == ['all'])) and \
+        (check_condition_chi2_1 and check_condition_chi2_2 \
+            and check_condition_chi2_3 and check_condition_chi2_4):
+        
+        # меры связи, основанные на критерии хи-квадрат и их стандартные ошибки (см. [Кендалл, с.749])
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.association.html
+        
+        if check_condition_2x2:
+            D_chi2 = 4*s_calc_chi2_Yates
+            # коэффициент сопряженности Пирсона
+            coef_value_C = sci.stats.contingency.association(X, \
+                method='pearson', correction='True')
+            ASE_C = N**2 / (4*s_calc_chi2_Yates*(X_sum + \
+                s_calc_chi2_Yates)**3)*D_chi2
+            # коэффициент ассоциации фи
+            coef_value_Phi = sqrt(sci.stats.chi2_contingency(X, \
+                correction=True)[0] / X.sum())
+            # коэффициент сопряженности Крамера
+            coef_value_V = sci.stats.contingency.association(X, \
+                method='cramer', correction='True')
+            ASE_V = np.sqrt(1 / (X_sum * np.min([N_rows-1, N_cols-1])))
+            # коэффициент сопряженности Чупрова
+            coef_value_T = sci.stats.contingency.association(X, \
+                method='tschuprow', correction='True')
+            ASE_T = np.sqrt(1 / (X_sum * np.sqrt((N_rows-1)*(N_cols-1))))
+        else:
+            D_chi2 = 4*s_calc_chi2
+            # коэффициент сопряженности Пирсона
+            coef_value_C = sci.stats.contingency.association(X, \
+                method='pearson', correction='False')
+            ASE_C = np.sqrt(X_sum**2 / (4*s_calc_chi2*(X_sum + \
+                                                       s_calc_chi2)**3)*D_chi2)
+            # коэффициент ассоциации фи
+            coef_value_Phi = sqrt(sci.stats.chi2_contingency(X, \
+                correction=False)[0] / X.sum())
+            # коэффициент сопряженности Крамера
+            coef_value_V = sci.stats.contingency.association(X, \
+                method='cramer', correction='False')
+            ASE_V = np.sqrt(1 / (X_sum * np.min([N_rows-1, N_cols-1])))
+            # коэффициент сопряженности Чупрова
+            coef_value_T = sci.stats.contingency.association(X, method='tschuprow', correction='False')
+            ASE_T = np.sqrt(1 / (X_sum * np.sqrt((N_rows-1)*(N_cols-1))))
+        
+        # заполним DataFrame для сводки результатов коэффициентов
+        coef_value_list = (coef_value_C, coef_value_Phi, coef_value_V, \
+                           coef_value_T)
+        scale_name = f'{scale} scale'
+    
+        result_4 = pd.DataFrame({
+            'name': (
+                "Pearson's C",
+                "Phi coefficient",
+                "Cramér's V",
+                "Tschuprow's T"),
+            'notation': ('С', 'φ', 'V', 'T'),
+            #'p_level': (p_level),
+            #'a_level': (a_level),
+            'coef_value': coef_value_list,
+            'ASE': (ASE_C, '-', ASE_V, ASE_T),
+            #'crit_value': (''),
+            # '|coef_value| >= crit_value': (''),
+            # 'significance_check': (''),        
+            # 'conf_int_low': (confidence_interval_min),
+            # 'conf_int_high': (confidence_interval_max),
+            scale_name: list(map(scale_check, \
+                [scale for i in range(len(coef_value_list))], coef_value_list))
+            })
+        
+        result_general.append(result_4)                 
+    
+    
+    # BLOCK 5: Fisher's exact test
+    # ----------------------------  
+        
+    if (('Fisher' in methods) or (methods == ['all'])) and check_condition_2x2:
+        
+        # точный критерий Фишера (Fisher's exact test)
+        # https://en.wikipedia.org/wiki/Fisher's_exact_test
+        # https://ru.wikipedia.org/wiki/%D0%A2%D0%BE%D1%87%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D1%81%D1%82_%D0%A4%D0%B8%D1%88%D0%B5%D1%80%D0%B0
+        # https://medstatistic.ru/methods/methods5.html
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fisher_exact.html
+        (odds_ratio, a_Fisher_calc_two_sided) = \
+            sci.stats.fisher_exact(X, alternative='two-sided')
+        Fisher_calc_alternative = 'greater' if odds_ratio > 1 else 'less'
+        a_Fisher_calc_one_sided = sci.stats.fisher_exact(X, \
+            alternative=Fisher_calc_alternative)[1]
+        independence_check_Fisher_one_sided = a_Fisher_calc_one_sided > a_level
+        conclusion_Fisher_one_sided = 'categories are independent' \
+            if independence_check_Fisher_one_sided \
+                else 'categories are not independent'
+        independence_check_Fisher_two_sided = a_Fisher_calc_two_sided > a_level
+        conclusion_Fisher_two_sided = 'categories are independent' \
+            if independence_check_Fisher_two_sided \
+                else 'categories are not independent'
+        
+        # заполним DataFrame для сводки результатов тестов
+        result_5 = pd.DataFrame({
+            'test': ("Fisher's exact test (one-sided)", "Fisher's exact test (two-sided)"),
+            #'p_level': (p_level),
+            # #'a_level': (a_level),
+            'a_calc': [a_Fisher_calc_one_sided, a_Fisher_calc_two_sided],
+            'a_calc >= a_level': [independence_check_Fisher_one_sided, \
+                                  independence_check_Fisher_two_sided],
+            'conclusion': [conclusion_Fisher_one_sided, \
+                           conclusion_Fisher_two_sided]
+            })
+        
+        result_general.append(result_5)                 
+        
+    else:
+        if not check_condition_2x2:
+            note = "The Fisher's exact test cannot be used: " + \
+                "the size of the table is not 2*2" 
+            print(note)
+    
+    
+    # BLOCK 6: Barnard's exact test
+    # -----------------------------
+    
+    if (('Barnard' in methods) or (methods == ['all'])) and check_condition_2x2:
+        
+        # тест Барнарда 
+        # https://en.wikipedia.org/wiki/Barnard's_test
+        # https://wikidea.ru/wiki/Barnard%27s_test
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.barnard_exact.html
         res = sci.stats.barnard_exact(X, alternative='two-sided')
-        s_calc_Barnard = res.statistic
-        a_calc_Barnard = res.pvalue
-        significance_check_Barnard = a_calc_Barnard <= a_level
-        conclusion_Barnard = 'categories are not independent' if significance_check_Barnard else 'categories are independent'
-    else:
-        conclusion_Barnard = 'not 2x2'
+        (s_calc_Barnard, a_calc_Barnard) = (res.statistic, res.pvalue)
+        independence_check_Barnard = a_calc_Barnard > a_level
+        conclusion_Barnard = 'categories are independent' \
+            if independence_check_Barnard else 'categories are not independent'
         
-    # тест Бошлу 
-    # https://en.wikipedia.org/wiki/Boschloo%27s_test
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.boschloo_exact.html
-    s_calc_Boschloo = '-'
-    critical_value_Boschloo = '-'
-    significance_check_Boschloo = '-'
-    a_calc_Boschloo = '-'
-    significance_check_Boschloo = '-'
+        # заполним DataFrame для сводки результатов тестов
+        result_6 = pd.DataFrame({
+            'test': ("Barnard's exact test"),
+            #'p_level': (p_level),
+            #'a_level': (a_level),
+            'statistic': [s_calc_Barnard],
+            #'critical_value': [],
+            #'statistic <= critical_value': [],
+            'a_calc': [a_calc_Barnard],
+            'a_calc >= a_level': [independence_check_Barnard],
+            'conclusion': [conclusion_Barnard]
+            })  
+        
+        result_general.append(result_6)                 
     
-    if check_condition_2x2:
+    else:
+        if not check_condition_2x2:
+            note = "The Barnard's test cannot be used: " + \
+                "the size of the table is not 2*2"
+            print(note)
+    
+    
+    # BLOCK 7: Boschloo's_exact test
+    # ------------------------------
+    
+    if (('Boschloo' in methods) \
+        or (methods == ['all'])) and check_condition_2x2:
+        
+        # тест Бошлу 
+        # # https://en.wikipedia.org/wiki/Boschloo%27s_test
+        # # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.boschloo_exact.html             
         res = sci.stats.boschloo_exact(X, alternative='two-sided')
-        s_calc_Boschloo = res.statistic
-        a_calc_Boschloo = res.pvalue
-        significance_check_Boschloo = a_calc_Boschloo <= a_level
-        conclusion_Boschloo = 'categories are not independent' if significance_check_Boschloo else 'categories are independent'
+        (s_calc_Boschloo, a_calc_Boschloo) = (res.statistic, res.pvalue)
+        independence_check_Boschloo = a_calc_Boschloo > a_level
+        conclusion_Boschloo = 'categories are independent' \
+            if independence_check_Boschloo \
+                else 'categories are not independent'
+        
+        # заполним DataFrame для сводки результатов тестов
+        result_7 = pd.DataFrame({
+            'test': ("Boschloo's exact test"),
+            #'p_level': (p_level),
+            #'a_level': (a_level),
+            'statistic': [s_calc_Boschloo],
+            #'critical_value': [],
+            #'statistic <= critical_value': [],
+            'a_calc': [a_calc_Boschloo],
+            'a_calc >= a_level': [independence_check_Boschloo],
+            'conclusion': [conclusion_Boschloo]
+            })  
+        
+        result_general.append(result_7)                 
+    
     else:
-        conclusion_Boschloo = 'not 2x2'        
-
-    # заполним DataFrame для сводки результатов
-    result = pd.DataFrame({
-        'test': (
-            'Chi-squared test',
-            "Chi-squared test (with Yates's correction for 2x2)",
-            "Fisher's exact test (two-sided)",
-            "Odds ratio",
-            "Barnard's exact test",
-            "Boschloo's exact test"),
-        'p_level': (p_level),
-        'a_level': (a_level),
-        'statistic': [s_calc_chi2, s_calc_chi2_Yates, '-', odds_ratio_calc, s_calc_Barnard, s_calc_Boschloo],
-        'critical_value': [
-            critical_value_chi2, 
-            critical_value_chi2_Yates, 
-            '-', '', 
-            critical_value_Barnard, 
-            critical_value_Boschloo],
-        'statistic >= critical_value': [
-            significance_check_chi2_s,
-            significance_check_chi2_s_Yates,
-            '-', '',
-            s_calc_Barnard,
-            s_calc_Boschloo],
-        'a_calc': [a_calc_chi2, a_calc_chi2_Yates, a_calc_Fisher_two_sided, '', a_calc_Barnard, a_calc_Boschloo],
-        'a_calc <= a_level': [
-            significance_check_chi2_a,
-            significance_check_chi2_a_Yates,
-            significance_check_Fisher_two_sided,
-            '', 
-            significance_check_Barnard, 
-            significance_check_Boschloo],
-        'conclusion': [
-            conclusion_chi2,
-            conclusion_chi2_Yates,
-            conclusion_Fisher_two_sided,
-            '',
-            conclusion_Barnard,
-            conclusion_Boschloo]
-        })
-
-    return result
-
-
-
-#------------------------------------------------------------------------------
-#   old Функция graph_contingency_tables_bar_pd
-#------------------------------------------------------------------------------
-
-def graph_contingency_tables_bar_pd(
-    data_pd,
-    A_name = None, B_name = None, 
-    graph_size=(210/INCH, 297/INCH/2),
-    part_table=1/5,    # часть графика, выделяемая под таблицу с данными
-    title_figure=None, title_figure_fontsize=16,
-    file_name=None):
+        if not check_condition_2x2:
+            note = "The Boschloo's test cannot be used: " + \
+                "the size of the table is not 2*2"
+            print(note)
     
-    # создание рисунка (Figure) и области рисования (Axes)
-    fig = plt.figure(figsize=graph_size, constrained_layout=True)
-    n_rows = int(1/part_table)
-    gs = mpl.gridspec.GridSpec(nrows=n_rows, ncols=2, figure=fig)
-    ax1_1 = fig.add_subplot(gs[0:n_rows-1, 0:1])
-    ax1_2 = fig.add_subplot(gs[n_rows-1, 0:1])
-    ax2_1 = fig.add_subplot(gs[0:n_rows-1, 1:])
-    ax2_2 = fig.add_subplot(gs[n_rows-1, 1:])
-    # заголовок рисунка (Figure)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    ax1_1.set_title('Absolute values', fontsize=14)
-    ax2_1.set_title('Relative values', fontsize=14)
-    
-    # столбчатая диаграмма с абсолютными значениями
-    data_pd.plot.bar(
-        stacked=True,
-        rot=0,
-        legend=True,
-        ax=ax1_1)
-    ax1_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
-    
-    ax1_2.set_axis_off()
-    table_1 = ax1_2.table(
-        cellText=np.fliplr(np.array(data_pd)).T,
-        rowLabels=data_pd.columns,
-        #colLabels=df.index[0:3],
-        cellLoc='center',
-        loc='center')
-    table_1.set_fontsize(12)
-    table_1.scale(1, 3)
-    
-    # столбчатая диаграмма с относительными значениями
-    data_relative = data_pd.copy()
-    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
-    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
-
-    data_relative.plot.bar(
-        stacked=True,
-        rot=0,
-        legend=True,
-        color=['lightblue', 'wheat'],
-        ax=ax2_1)
-    ax2_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
-    
-    ax2_2.set_axis_off()
-    table_2 = ax2_2.table(
-        cellText=np.fliplr(np.array(data_relative)).T,
-        rowLabels=data_relative.columns,
-        #colLabels=df.index[0:3],
-        cellLoc='center',
-        loc='center')
-    table_2.set_fontsize(12)
-    table_2.scale(1, 3)
-    
-    fig.tight_layout()
         
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return
-
-
-
-#------------------------------------------------------------------------------
-#   old Функция graph_contingency_tables_freqint_pd
-#------------------------------------------------------------------------------
-
-def graph_contingency_tables_bar_freqint_pd(
-    data_pd,
-    A_name = None, B_name = None, 
-    graph_size=(297/INCH, 210/INCH/1.5),
-    title_figure=None, title_figure_fontsize=16,
-    file_name=None):
+    # EXPECTED FREQ
+    # -------------
     
-    # создание рисунка (Figure) и области рисования (Axes)
-    fig = plt.figure(figsize=graph_size, constrained_layout=True)
-    ax1 = plt.subplot(1,3,1)
-    ax2 = plt.subplot(1,3,2)
-    ax3 = plt.subplot(1,3,3)
-    # заголовок рисунка (Figure)
-    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
-    ax2.set_title('Relative values', fontsize=14)
-    
-    # столбчатая диаграмма с абсолютными значениями
-    data_pd.plot.bar(
-        stacked=True,
-        rot=0,
-        legend=True,
-        ax=ax1)
-    ax1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
-    ax1.set_title('Absolute values', fontsize=14)
-    
-    # столбчатая диаграмма с относительными значениями
-    data_relative = data_pd.copy()
-    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
-    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
-
-    data_relative.plot.bar(
-        stacked=True,
-        rot=0,
-        legend=True,
-        color=['lightblue', 'wheat'],
-        ax=ax2)
-    ax2.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
-    
-    # график взаимодействия частот
-    sns.lineplot(
-        data=data_pd,
-        dashes=False,
-        lw=3,
-        #markers=['o','o'],
-        markersize=10,
-        ax=ax3)
-    ax3.set_title('Graph of frequency interactions', fontsize=14)
-    ax3.set_xticks(list(data_pd.index))
+    if expected_freq:
+        if isinstance(data, pd.core.frame.DataFrame):
+            result_expected_freq_df = pd.DataFrame(
+                result_expected_freq,
+                index = data.index,
+                columns = pd.MultiIndex.from_product([['expected frequencies'],\
+                                                      data.columns]))
+        else: 
+            result_expected_freq_df = pd.DataFrame(
+                result_expected_freq,
+                columns = pd.MultiIndex.from_product([['expected frequencies'],\
+                                                      range(0, N_cols)]))
         
-    fig.tight_layout()
-        
-    plt.show()
-    if file_name:
-        fig.savefig(file_name, orientation = "portrait", dpi = 300)
-        
-    return
-
-
-
-#==============================================================================
-#               ФУНКЦИИ ДЛЯ ВЫЯВЛЕНИЯ АНОМАЛЬНЫХ ЗНАЧЕНИЙ (ВЫБРОСОВ)
-#==============================================================================    
+        result_general.append(result_expected_freq_df)     
     
-#------------------------------------------------------------------------------
-#   Функция detecting_outliers_mad_test
-#   Критерий максимального абсолютного отклонения (М.А.О.) (см.[Кобзарь, с.547]
-#------------------------------------------------------------------------------
-
-def detecting_outliers_mad_test(
-        X_in,
-        p_level=0.95,
-        show_in_full=False,
-        delete_outlier=False):
-    N = len(X_in)
-    X_mean = X_in.mean()
-    X_std = X_in.std(ddof = 1)
-    # создаем вспомогательный DataFrame, отсортированный по возрастанию
-    data = pd.DataFrame({'value': X_in}).sort_values(by='value')
-    # расчетное значение статистики критерия М.А.О.
-    data['mad_calc'] = abs((data['value'] - X_mean)/X_std)
-    # аппроксимация табличного значения статистики критерия М.А.О.
-    mad_table = lambda n: 1.39 + 0.462*log(n-3) if 5<=n<35 else 2.136 - 0.281*log(n-15) if 35<=n<=500 else '-'
-    data['mad_table'] = mad_table(N)
-    # добавляем во вспомогательный DataFrame столбец 'outlier_conclusion', в котором выбросу будут отмечены как 'outlier'
-    data['outlier_conclusion'] = '-'
-    mask = data['mad_calc'] >= data['mad_table']
-    data.loc[mask, 'outlier_conclusion'] = 'outlier'
+    # RETURN RESULTS
+    # --------------
         
-    if delete_outlier:
-        X_out = np.delete(X_in, [data.loc[mask].index])
-        return data, X_out
-    else:
-        return data
+    return result_general
+
 
 
 
 
 #==============================================================================
-#               3. ФУНКЦИИ ДЛЯ ИССЛЕДОВАНИЯ ЗАКОНОВ РАСПРЕДЕЛЕНИЯ
-#==============================================================================
-
-
-#------------------------------------------------------------------------------
-#   Функция norm_distr_check
-#------------------------------------------------------------------------------
-
-
-def norm_distr_check (data, p_level=0.95):
-    a_level = 1 - p_level
-    X = np.array(data)
-    N = len(X)
-        
-    # критерий Шапиро-Уилка
-    if N >= 8:
-        result_ShW = sci.stats.shapiro(X)
-        s_calc_ShW = result_ShW.statistic
-        a_calc_ShW = result_ShW.pvalue
-        conclusion_ShW = 'gaussian distribution' if a_calc_ShW >= a_level else 'not gaussian distribution'
-    else:
-        result_ShW = '-'
-        s_calc_ShW = '-'
-        a_calc_ShW = '-'
-        conclusion_ShW = 'count less than 8'
-
-    # критерий Эппса-Палли        
-    сdf_beta_I = lambda x, a, b: sci.stats.beta.cdf(x, a, b, loc=0, scale=1)
-    g_beta_III = lambda z, δ: δ*z / (1+(δ-1)*z)
-    cdf_beta_III = lambda x, θ0, θ1, θ2, θ3, θ4: сdf_beta_I(g_beta_III((x - θ4)/θ3, θ2), θ0, θ1)
-    
-    θ_1 = (1.8645, 2.5155, 5.8256, 0.9216, 0.0008)    # для 15 < n < 50
-    θ_2 = (1.7669, 2.1668, 6.7594, 0.91, 0.0016)    # для n >= 50
-    
-    if N >= 8:
-        X_mean = X.mean()
-        m2 = np.var(X, ddof = 0)
-        # расчетное значение статистики критерия
-        A = sqrt(2) * np.sum([exp(-(X[i] - X_mean)**2 / (4*m2)) for i in range(N)])
-        B = 2/N * np.sum(
-            [np.sum([exp(-(X[j] - X[k])**2 / (2*m2)) for j in range(0, k)]) 
-             for k in range(1, N)])
-        s_calc_EP = 1 + N / sqrt(3) + B - A
-        # табличное значение статистики критерия
-        Tep_table_df = pd.read_csv(
-            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
-            sep=';',
-            index_col='n')
-        p_level_dict = {
-            0.9:   Tep_table_df.columns[0],
-            0.95:  Tep_table_df.columns[1],
-            0.975: Tep_table_df.columns[2],
-            0.99:  Tep_table_df.columns[3]}
-        f_lin = sci.interpolate.interp1d(Tep_table_df.index, Tep_table_df[p_level_dict[p_level]])
-        critical_value_EP = float(f_lin(N))
-        # проверка гипотезы
-        if 15 < N < 50:
-            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_1[0], θ_1[1], θ_1[2], θ_1[3], θ_1[4])
-            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
-        elif N >= 50:
-            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_2[0], θ_2[1], θ_2[2], θ_2[3], θ_2[4])
-            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
-        else:
-            a_calc_EP = ''              
-            conclusion_EP = 'gaussian distribution' if s_calc_EP <= critical_value_EP else 'not gaussian distribution'            
-                
-    else:
-        s_calc_EP = '-'
-        critical_value_EP = '-'
-        a_calc_EP = '-'
-        conclusion_EP = 'count less than 8'
-    
-    
-    # критерий Д'Агостино (K2-test)
-    if N >= 8:
-        result_K2 = sci.stats.normaltest(X)
-        s_calc_K2 = result_K2.statistic
-        a_calc_K2 = result_K2.pvalue
-        conclusion_K2 = 'gaussian distribution' if a_calc_K2 >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_K2 = '-'
-        a_calc_K2 = '-'
-        conclusion_K2 = 'count less than 8'
-    
-    # критерий Андерсона-Дарлинга
-    result_AD = sci.stats.anderson(X)
-    df_AD = pd.DataFrame({
-        'a_level (%)': result_AD.significance_level,
-        'statistic': [result_AD.statistic for i in range(len(result_AD.critical_values))],
-        'critical_value': result_AD.critical_values
-        })
-    statistic_AD = float(df_AD[df_AD['a_level (%)'] == round((1 - p_level)*100, 1)]['statistic'])
-    critical_value_AD = float(df_AD[df_AD['a_level (%)'] == round((1 - p_level)*100, 1)]['critical_value'])
-    conclusion_AD = 'gaussian distribution' if statistic_AD < critical_value_AD else 'not gaussian distribution'
-    
-    # критерий Колмогорова-Смирнова
-    if N >= 50:
-        result_KS = sci.stats.kstest(X, 'norm')
-        s_calc_KS = result_KS.statistic
-        a_calc_KS = result_KS.pvalue
-        conclusion_KS = 'gaussian distribution' if a_calc_KS >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_KS = '-'
-        a_calc_KS = '-'
-        conclusion_KS = 'count less than 50'
-        
-    # критерий Лиллиефорса      
-    from statsmodels.stats.diagnostic import lilliefors
-    s_calc_L, a_calc_L = sm.stats.diagnostic.lilliefors(X, 'norm')
-    conclusion_L = 'gaussian distribution' if a_calc_L >= a_level else 'not gaussian distribution'  
-    
-    # критерий Крамера-Мизеса-Смирнова (омега-квадрат)
-    if N >= 40:
-        result_CvM = sci.stats.cramervonmises(X, 'norm')
-        s_calc_CvM = result_CvM.statistic
-        a_calc_CvM = result_CvM.pvalue
-        conclusion_CvM = 'gaussian distribution' if a_calc_CvM >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_CvM = '-'
-        a_calc_CvM = '-'
-        conclusion_CvM = 'count less than 40'
-    
-    # критерий Пирсона (хи-квадрат)
-    if N >= 100:
-        ddof = 2    # поправка к числу степеней свободы (число параметров распределения, оцениваемое по выборке)
-        result_Chi2 = sci.stats.chisquare(X, ddof=ddof)
-        s_calc_Chi2 = result_Chi2.statistic
-        a_calc_Chi2 = result_Chi2.pvalue
-        conclusion_Chi2 = 'gaussian distribution' if a_calc_Chi2 >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_Chi2 = '-'
-        a_calc_Chi2 = '-'
-        conclusion_Chi2 = 'count less than 100'
-        
-    # критерий Харке-Бера (асимметрии и эксцесса)
-    if N > 2000:
-        result_JB = sci.stats.jarque_bera(X)
-        s_calc_JB = result_JB.statistic
-        a_calc_JB = result_JB.pvalue
-        conclusion_JB = 'gaussian distribution' if a_calc_JB >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_JB = '-'
-        a_calc_JB = '-'
-        conclusion_JB = 'count less than 2000'
-    
-    # критерий асимметрии
-    if N >= 8:
-        result_As = sci.stats.skewtest(X)
-        s_calc_As = result_As.statistic
-        a_calc_As = result_As.pvalue
-        conclusion_As = 'gaussian distribution' if a_calc_As >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_As = '-'
-        a_calc_As = '-'
-        conclusion_As = 'count less than 8'
-     
-    # критерий эксцесса
-    if N > 20:
-        result_Es = sci.stats.kurtosistest(X)
-        s_calc_Es = result_Es.statistic
-        a_calc_Es = result_Es.pvalue
-        conclusion_Es = 'gaussian distribution' if a_calc_Es >= a_level else 'not gaussian distribution'
-    else:
-        s_calc_Es = '-'
-        a_calc_Es = '-'
-        conclusion_Es = 'count less than 20'
-    
-    # Создадим DataFrame для сводки результатов    
-    result = pd.DataFrame({
-    'test': (
-        'Shapiro-Wilk test',
-        'Epps-Pulley test',
-        "D'Agostino's K-squared test",
-        'Anderson-Darling test',
-        'Kolmogorov–Smirnov test',
-        'Lilliefors test',
-        'Cramér–von Mises test',
-        'Chi-squared test',
-        'Jarque–Bera test',
-        'skewtest',
-        'kurtosistest'),
-    'p_level': (p_level),
-    'a_level': (a_level),
-    'a_calc': (
-        a_calc_ShW,
-        a_calc_EP,
-        a_calc_K2,
-        '',
-        a_calc_KS,
-        a_calc_L,
-        a_calc_CvM,
-        a_calc_Chi2,
-        a_calc_JB,
-        a_calc_As,
-        a_calc_Es),
-    'a_calc >= a_level': (
-        a_calc_ShW >= a_level if N >= 8 else '-',
-        a_calc_EP >= a_level if N > 15 else '-',
-        a_calc_K2 >= a_level if N >= 8 else '-',
-        '',
-        a_calc_KS >= a_level if N >= 50 else '-',
-        a_calc_L >= a_level,
-        a_calc_CvM >= a_level if N >= 40 else '-',
-        a_calc_Chi2 >= a_level if N >= 100 else '-',
-        a_calc_JB >= a_level if N >= 2000 else '-',
-        a_calc_As >= a_level if N >= 8 else '-',
-        a_calc_Es >= a_level if N > 20 else '-'),
-    'statistic': (
-        s_calc_ShW,
-        s_calc_EP,
-        s_calc_K2,
-        statistic_AD,
-        s_calc_KS,
-        s_calc_L,
-        s_calc_CvM,
-        s_calc_Chi2,
-        s_calc_JB,
-        s_calc_As,
-        s_calc_Es),
-    'critical_value': (
-        '',
-        critical_value_EP,
-        '',
-        critical_value_AD,
-        '', '', '', '', '', '', ''),
-    'statistic < critical_value': (
-        '',
-        s_calc_EP < critical_value_EP  if N >= 8 else '-',
-        '',
-        statistic_AD < critical_value_AD,
-        '', '', '', '', '', '', ''),
-    'conclusion': (
-        conclusion_ShW,
-        conclusion_EP,
-        conclusion_K2,
-        conclusion_AD,
-        conclusion_KS,
-        conclusion_L,
-        conclusion_CvM,
-        conclusion_Chi2,
-        conclusion_JB,
-        conclusion_As,
-        conclusion_Es
-        )})  
-        
-    return result
-
-
-#------------------------------------------------------------------------------
-#   Функция Shapiro_Wilk_test
-#   функция для обработки реализации теста Шапиро-Уилка
-#------------------------------------------------------------------------------
-
-def Shapiro_Wilk_test(data, p_level=0.95, DecPlace=5):
-    a_level = 1 - p_level
-    data = np.array(data)
-    result = sci.stats.shapiro(data)
-    s_calc = result.statistic    # расчетное значение статистики критерия
-    a_calc = result.pvalue    # расчетный уровень значимости
-    
-    print(f"Расчетный уровень значимости: a_calc = {round(a_calc, DecPlace)}")
-    print(f"Заданный уровень значимости: a_level = {round(a_level, DecPlace)}")
-    
-    if a_calc >= a_level:
-        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} >= a_level = {round(a_level, DecPlace)}" + \
-            ", то гипотеза о нормальности распределения по критерию Шапиро-Уилка ПРИНИМАЕТСЯ"
-    else:
-        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} < a_level = {round(a_level, DecPlace)}" + \
-            ", то гипотеза о нормальности распределения по критерию Шапиро-Уилка ОТВЕРГАЕТСЯ"
-    print(conclusion_ShW_test)
-
-
-
-#------------------------------------------------------------------------------
-#   Функция Epps_Pulley_test
-#------------------------------------------------------------------------------    
-
-def Epps_Pulley_test(data, p_level=0.95):
-    a_level = 1 - p_level
-    X = np.array(data)
-    N = len(X)
-    
-    # аппроксимация предельных распределений статистики критерия
-    сdf_beta_I = lambda x, a, b: sci.stats.beta.cdf(x, a, b, loc=0, scale=1)
-    g_beta_III = lambda z, δ: δ*z / (1+(δ-1)*z)
-    cdf_beta_III = lambda x, θ0, θ1, θ2, θ3, θ4: сdf_beta_I(g_beta_III((x - θ4)/θ3, θ2), θ0, θ1)
-    # набор параметров распределения
-    θ_1 = (1.8645, 2.5155, 5.8256, 0.9216, 0.0008)    # для 15 < n < 50
-    θ_2 = (1.7669, 2.1668, 6.7594, 0.91, 0.0016)    # для n >= 50
-    
-    if N >= 8:
-        # среднее арифметическое
-        X_mean = X.mean()
-        # центральный момент 2-го порядка
-        m2 = np.var(X, ddof = 0)
-        # расчетное значение статистики критерия
-        A = sqrt(2) * np.sum([exp(-(X[i] - X_mean)**2 / (4*m2)) for i in range(N)])
-        B = 2/N * np.sum(
-            [np.sum([exp(-(X[j] - X[k])**2 / (2*m2)) for j in range(0, k)]) 
-             for k in range(1, N)])
-        s_calc_EP = 1 + N / sqrt(3) + B - A
-        # табличное значение статистики критерия
-        Tep_table_df = pd.read_csv(
-            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
-            sep=';',
-            index_col='n')
-        p_level_dict = {
-            0.9:   Tep_table_df.columns[0],
-            0.95:  Tep_table_df.columns[1],
-            0.975: Tep_table_df.columns[2],
-            0.99:  Tep_table_df.columns[3]}
-        f_lin = sci.interpolate.interp1d(Tep_table_df.index, Tep_table_df[p_level_dict[p_level]])
-        s_table_EP = float(f_lin(N))
-        # проверка гипотезы
-        if 15 < N < 50:
-            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_1[0], θ_1[1], θ_1[2], θ_1[3], θ_1[4])
-            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
-        elif N >= 50:
-            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_2[0], θ_2[1], θ_2[2], θ_2[3], θ_2[4])
-            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
-        else:
-            a_calc_EP = ''              
-            conclusion_EP = 'gaussian distribution' if s_calc_EP <= s_table_EP else 'not gaussian distribution'            
-                
-    else:
-        s_calc_EP = '-'
-        s_table_EP = '-'
-        a_calc_EP = '-'
-        conclusion_EP = 'count less than 8'
-    
-    result = pd.DataFrame({
-        'test': ('Epps-Pulley test'),
-        'p_level': (p_level),
-        'a_level': (a_level),
-        'a_calc': (a_calc_EP),
-        'a_calc >= a_level': (a_calc_EP >= a_level if N > 15 else '-'),
-        'statistic': (s_calc_EP),
-        'critical_value': (s_table_EP),
-        'statistic < critical_value': (s_calc_EP < s_table_EP if N >= 8 else '-'),
-        'conclusion': (conclusion_EP)},
-        index=[1])  
-        
-    return result
-
-
-
-#==============================================================================
-#               ФУНКЦИИ ДЛЯ КОРРЕЛЯЦИОННОГО АНАЛИЗА
+#               9. ФУНКЦИИ ДЛЯ КОРРЕЛЯЦИОННОГО АНАЛИЗА
 #==============================================================================
 
 
 #------------------------------------------------------------------------------
 #   Функция Cheddock_scale_check
+#   Оценка тесноты связи по шкале Чеддока
 #------------------------------------------------------------------------------
 
-def Cheddock_scale_check(r, name='r'):
+def Cheddock_scale_check(r, name: str='r'):
+    
+    """
+    Функция для оценки тесноты связи по шкале Чеддока
+
+    Args:
+        r:                       Коэффициент, характеризующий тесноту связи
+        name (str, optional):    Обозначение коэффициента
+                                 Defaults to 'r'
+
+    Returns:
+        conclusion_Cheddock_scale (str):    результат    
+                             
+    """
+    
     # задаем шкалу Чеддока
     Cheddock_scale = {
         f'no correlation (|{name}| <= 0.1)':    0.1,
@@ -3283,9 +6085,24 @@ def Cheddock_scale_check(r, name='r'):
 
 #------------------------------------------------------------------------------
 #   Функция Evans_scale_check
+#   Оценка тесноты связи по шкале Эванса
 #------------------------------------------------------------------------------
 
-def Evans_scale_check(r, name='r'):
+def Evans_scale_check(r, name: str='r'):
+    
+    """
+    Функция для оценки тесноты связи по шкале Эванса
+
+    Args:
+        r:                       Коэффициент, характеризующий тесноту связи
+        name (str, optional):    Обозначение коэффициента
+                                 Defaults to 'r'
+    
+    Returns:
+        conclusion_Evans_scale (str):    результат        
+                         
+    """
+    
     # задаем шкалу Эванса
     Evans_scale = {
         f'very weak (|{name}| < 0.19)':         0.2,
@@ -3305,9 +6122,24 @@ def Evans_scale_check(r, name='r'):
 
 #------------------------------------------------------------------------------
 #   Функция Rea_Parker_scale_check
+#   Оценка тесноты связи по шкале Rea&Parker
 #------------------------------------------------------------------------------
 
-def Rea_Parker_scale_check(r, name='r'):
+def Rea_Parker_scale_check(r, name: str='r'):
+    
+    """
+    Функция для оценки тесноты связи по шкале Rea&Parker
+
+    Args:
+        r:                       Коэффициент, характеризующий тесноту связи
+        name (str, optional):    Обозначение коэффициента
+                                 Defaults to 'r'
+    
+    Returns:
+        conclusion_Rea_Parker (str):    результат    
+                             
+    """
+    
     # задаем шкалу Rea_Parker
     Rea_Parker_scale = {
         f'unessential (|{name}| < 0.1)':                  0.1,
@@ -3328,11 +6160,36 @@ def Rea_Parker_scale_check(r, name='r'):
 
 #------------------------------------------------------------------------------
 #   Функция corr_coef_check
+#
+#   Функция для расчета и анализа коэффициента корреляции Пирсона
 #------------------------------------------------------------------------------
 
-# Функция для расчета и анализа коэффициента корреляции Пирсона
+def corr_coef_check(
+        X, Y,
+        p_level:    float = 0.95, 
+        scale:      str = 'Cheddok'):
+            
+    """
+    Расчет и проверка значимости коэффициента линейной корреляции Пирсона.
+        
+    Args:
+        X, Y:                      
+            массивы исходных данных.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
 
-def corr_coef_check(X, Y, p_level=0.95, scale='Cheddok'):
+        scale (str, optional):               
+            шкала для оценки тесноты связи.
+            Defaults to 'Evans'.
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+    
+    """
+    
     a_level = 1 - p_level
     X = np.array(X)
     Y = np.array(Y)
@@ -3340,26 +6197,34 @@ def corr_coef_check(X, Y, p_level=0.95, scale='Cheddok'):
     n_Y = len(Y)
     # оценка коэффициента линейной корреляции средствами scipy
     corr_coef, a_corr_coef_calc = sci.stats.pearsonr(X, Y)
-    # несмещенная оценка коэффициента линейной корреляции (при n < 15) (см.Кобзарь, с.607)
+    # несмещенная оценка коэффициента линейной корреляции (при n < 15)
+    # (см.Кобзарь, с.607)
     if n_X < 15:
         corr_coef = corr_coef * (1 + (1 - corr_coef**2) / (2*(n_X-3)))
     # проверка гипотезы о значимости коэффициента корреляции
     t_corr_coef_calc = abs(corr_coef) * sqrt(n_X-2) / sqrt(1 - corr_coef**2)
     t_corr_coef_table = sci.stats.t.ppf((1 + p_level)/2 , n_X - 2)
-    conclusion_corr_coef_sign = 'significance' if t_corr_coef_calc >= t_corr_coef_table else 'not significance'
+    conclusion_corr_coef_sign = 'significance' if \
+        t_corr_coef_calc >= t_corr_coef_table else 'not significance'
     # доверительный интервал коэффициента корреляции
     if t_corr_coef_calc >= t_corr_coef_table:
-        z1 = np.arctanh(corr_coef) - sci.stats.norm.ppf((1 + p_level)/2, 0, 1) / sqrt(n_X-3) - corr_coef / (2*(n_X-1))
-        z2 = np.arctanh(corr_coef) + sci.stats.norm.ppf((1 + p_level)/2, 0, 1) / sqrt(n_X-3) - corr_coef / (2*(n_X-1))
+        z1 = np.arctanh(corr_coef) - \
+            sci.stats.norm.ppf((1 + p_level)/2, 0, 1) / sqrt(n_X-3) - \
+                corr_coef / (2*(n_X-1))
+        z2 = np.arctanh(corr_coef) + \
+            sci.stats.norm.ppf((1 + p_level)/2, 0, 1) / sqrt(n_X-3) - \
+                corr_coef / (2*(n_X-1))
         corr_coef_conf_int_low = tanh(z1)
         corr_coef_conf_int_high = tanh(z2)
     else:
         corr_coef_conf_int_low = corr_coef_conf_int_high = '-'    
     # оценка тесноты связи
     if scale=='Cheddok':
-        conclusion_corr_coef_scale = scale + ': ' + Cheddock_scale_check(corr_coef)
+        conclusion_corr_coef_scale = scale + ': ' + \
+            Cheddock_scale_check(corr_coef)
     elif scale=='Evans':
-        conclusion_corr_coef_scale = scale + ': ' + Evans_scale_check(corr_coef)
+        conclusion_corr_coef_scale = scale + ': ' + \
+            Evans_scale_check(corr_coef)
     # формируем результат            
     result = pd.DataFrame({
         'notation': ('r'),
@@ -3384,11 +6249,50 @@ def corr_coef_check(X, Y, p_level=0.95, scale='Cheddok'):
 
 #------------------------------------------------------------------------------
 #   Функция corr_ratio_check
+#
+#   Функция для расчета и анализа корреляционного отношения
 #------------------------------------------------------------------------------
 
-# Функция для расчета и анализа корреляционного отношения
+def corr_ratio_check(
+        X, Y, 
+        p_level:        float = 0.95, 
+        orientation:    str = 'XY', 
+        scale:          str = 'Cheddok'):
+    
+    """
+    Расчет и проверка значимости корреляционного отношения.
+        
+    Args:
+        X, Y:                      
+            массивы исходных данных.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
 
-def corr_ratio_check(X, Y, p_level=0.95, orientation='XY', scale='Cheddok'):
+        orientation (str, optional):               
+            направление связи ('XY' или 'YX').
+            Defaults to 'XY'.
+            
+        scale (str, optional):               
+            шкала для оценки тесноты связи.
+            Defaults to 'Evans'.
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+    
+    Note:
+        при значениях η близких к 0 или 1 левая или правая граница 
+        доверительного интервала может выходить за пределы отрезка [0; 1], 
+        теряя содержательный смысл (Айвазян С.А. и др. Прикладная статистика: 
+        исследование зависимостей. - М.: Финансы и статистика, 1985. - с.80]). 
+        Причина этого - в аппроксимационном подходе к определению границ 
+        доверительного интервала. Подобные нежелательные явления возможны, 
+        и их нужно учитывать при выполнении анализа.            
+    
+    """
+    
     a_level = 1 - p_level
     X = np.array(X)
     Y = np.array(Y)
@@ -3399,7 +6303,8 @@ def corr_ratio_check(X, Y, p_level=0.95, orientation='XY', scale='Cheddok'):
         'X': X,
         'Y': Y})
     # число интервалов группировки
-    group_int_number = lambda n: round (3.31*log(n, 10)+1) if round (3.31*log(n, 10)+1) >=2 else 2
+    group_int_number = lambda n: round (3.31*log(n, 10)+1) if \
+        round (3.31*log(n, 10)+1) >=2 else 2
     K_X = group_int_number(n_X)
     K_Y = group_int_number(n_Y)
     # группировка данных и формирование корреляционной таблицы
@@ -3418,19 +6323,29 @@ def corr_ratio_check(X, Y, p_level=0.95, orientation='XY', scale='Cheddok'):
     n_group_X = [np.sum(CorrTable_np[i]) for i in range(K_X)]
     n_group_Y = [np.sum(CorrTable_np[:,j]) for j in range(K_Y)]
     # среднегрупповые значения переменной X
-    Xboun_mean = [(CorrTable_df.index[i].left + CorrTable_df.index[i].right)/2 for i in range(K_X)]
-    Xboun_mean[0] = (np.min(X) + CorrTable_df.index[0].right)/2    # исправляем значения в крайних интервалах
+    Xboun_mean = \
+        [(CorrTable_df.index[i].left + CorrTable_df.index[i].right)/2 \
+            for i in range(K_X)]
+    # исправляем значения в крайних интервалах
+    Xboun_mean[0] = (np.min(X) + CorrTable_df.index[0].right)/2    
     Xboun_mean[K_X-1] = (CorrTable_df.index[K_X-1].left + np.max(X))/2
     # среднегрупповые значения переменной Y
-    Yboun_mean = [(CorrTable_df.columns[j].left + CorrTable_df.columns[j].right)/2 for j in range(K_Y)]
-    Yboun_mean[0] = (np.min(Y) + CorrTable_df.columns[0].right)/2    # исправляем значения в крайних интервалах
+    Yboun_mean = \
+        [(CorrTable_df.columns[j].left + CorrTable_df.columns[j].right)/2 \
+            for j in range(K_Y)]
+    # исправляем значения в крайних интервалах
+    Yboun_mean[0] = (np.min(Y) + CorrTable_df.columns[0].right)/2    
     Yboun_mean[K_Y-1] = (CorrTable_df.columns[K_Y-1].left + np.max(Y))/2
     # средневзевешенные значения X и Y для каждой группы
-    Xmean_group = [np.sum(CorrTable_np[:,j] * Xboun_mean) / n_group_Y[j] for j in range(K_Y)]
+    Xmean_group = \
+        [np.sum(CorrTable_np[:,j] * Xboun_mean) / n_group_Y[j] \
+            for j in range(K_Y)]
     for i, elem in enumerate(Xmean_group):
         if isnan(elem):
             Xmean_group[i] = 0
-    Ymean_group = [np.sum(CorrTable_np[i] * Yboun_mean) / n_group_X[i] for i in range(K_X)]
+    Ymean_group = \
+        [np.sum(CorrTable_np[i] * Yboun_mean) / n_group_X[i] \
+            for i in range(K_X)]
     for i, elem in enumerate(Ymean_group):
         if isnan(elem):
             Ymean_group[i] = 0
@@ -3453,27 +6368,36 @@ def corr_ratio_check(X, Y, p_level=0.95, orientation='XY', scale='Cheddok'):
     except ValueError as err:
         print(err)
     # проверка гипотезы о значимости корреляционного отношения
-    F_corr_ratio_calc = (n_X - K_X)/(K_X - 1) * corr_ratio**2 / (1 - corr_ratio**2)
+    F_corr_ratio_calc = \
+        (n_X - K_X)/(K_X - 1) * corr_ratio**2 / (1 - corr_ratio**2)
     dfn = K_X - 1
     dfd = n_X - K_X
-    F_corr_ratio_table = sci.stats.f.ppf(p_level, dfn, dfd, loc=0, scale=1)
-    a_corr_ratio_calc = 1 - sci.stats.f.cdf(F_corr_ratio_calc, dfn, dfd, loc=0, scale=1)
-    conclusion_corr_ratio_sign = 'significance' if F_corr_ratio_calc >= F_corr_ratio_table else 'not significance'
+    F_corr_ratio_table = \
+        sci.stats.f.ppf(p_level, dfn, dfd, loc=0, scale=1)
+    a_corr_ratio_calc = \
+        1 - sci.stats.f.cdf(F_corr_ratio_calc, dfn, dfd, loc=0, scale=1)
+    conclusion_corr_ratio_sign = 'significance' \
+        if F_corr_ratio_calc >= F_corr_ratio_table else 'not significance'
     # доверительный интервал корреляционного отношения
     if F_corr_ratio_calc >= F_corr_ratio_table:
-        f1 = round ((K_X - 1 + n_X * corr_ratio**2)**2 / (K_X - 1 + 2 * n_X * corr_ratio**2))
+        f1 = round((K_X-1+n_X*corr_ratio**2)**2/(K_X-1+2*n_X*corr_ratio**2))
         f2 = n_X - K_X
-        z1 = (n_X - K_X) / n_X * corr_ratio**2 / (1 - corr_ratio**2) * 1/sci.stats.f.ppf(p_level, f1, f2, loc=0, scale=1) - (K_X - 1)/n_X
-        z2 = (n_X - K_X) / n_X * corr_ratio**2 / (1 - corr_ratio**2) * 1/sci.stats.f.ppf(1 - p_level, f1, f2, loc=0, scale=1) - (K_X - 1)/n_X
+        z1 = (n_X - K_X) / n_X * corr_ratio**2 / (1 - corr_ratio**2) * \
+            1/sci.stats.f.ppf(p_level, f1, f2, loc=0, scale=1) - (K_X - 1)/n_X
+        z2 = (n_X - K_X) / n_X * corr_ratio**2 / (1 - corr_ratio**2) * \
+            1/sci.stats.f.ppf(1 - p_level, f1, f2, loc=0, scale=1) - \
+                (K_X - 1)/n_X
         corr_ratio_conf_int_low = sqrt(z1) if sqrt(z1) >= 0 else 0
         corr_ratio_conf_int_high = sqrt(z2) if sqrt(z2) <= 1 else 1
     else:
         corr_ratio_conf_int_low = corr_ratio_conf_int_high = '-'    
     # оценка тесноты связи
     if scale=='Cheddok':
-        conclusion_corr_ratio_scale = scale + ': ' + Cheddock_scale_check(corr_ratio, name=chr(951))
+        conclusion_corr_ratio_scale = scale + ': ' + \
+            Cheddock_scale_check(corr_ratio, name=chr(951))
     elif scale=='Evans':
-        conclusion_corr_ratio_scale = scale + ': ' + Evans_scale_check(corr_ratio, name=chr(951))
+        conclusion_corr_ratio_scale = scale + ': ' + \
+            Evans_scale_check(corr_ratio, name=chr(951))
     # формируем результат            
     result = pd.DataFrame({
         'notation': (chr(951)),
@@ -3499,11 +6423,36 @@ def corr_ratio_check(X, Y, p_level=0.95, orientation='XY', scale='Cheddok'):
 
 #------------------------------------------------------------------------------
 #   Функция line_corr_sign_check
+#
+#   Функция для проверка значимости линейной корреляционной связи
 #------------------------------------------------------------------------------
 
-# Функция для проверка значимости линейной корреляционной связи
+def line_corr_sign_check(
+        X, Y, 
+        p_level:        float = 0.95, 
+        orientation:    str = 'XY'):
+    
+    """
+    Расчет и проверка значимости линейной корреляционной связи.
+        
+    Args:
+        X, Y:                      
+            массивы исходных данных.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
 
-def line_corr_sign_check(X, Y, p_level=0.95, orientation='XY'):
+        orientation (str, optional):               
+            направление связи ('XY' или 'YX').
+            Defaults to 'XY'
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+        
+    """
+    
     a_level = 1 - p_level
     X = np.array(X)
     Y = np.array(Y)
@@ -3516,32 +6465,43 @@ def line_corr_sign_check(X, Y, p_level=0.95, orientation='XY'):
         if orientation!='XY' and orientation!='YX':
             raise ValueError("Error! Incorrect orientation!")
         if orientation=='XY':
-            corr_ratio = corr_ratio_check(X, Y, orientation='XY', scale='Evans')['coef_value'].values[0]
+            corr_ratio = corr_ratio_check(X, Y, orientation='XY', \
+                scale='Evans')['coef_value'].values[0]
         elif orientation=='YX':
-            corr_ratio = corr_ratio_check(X, Y, orientation='YX', scale='Evans')['coef_value'].values[0]
+            corr_ratio = corr_ratio_check(X, Y, orientation='YX', \
+                scale='Evans')['coef_value'].values[0]
     except ValueError as err:
         print(err)
     # число интервалов группировки
-    group_int_number = lambda n: round (3.31*log(n_X, 10)+1) if round (3.31*log(n_X, 10)+1) >=2 else 2
+    group_int_number = lambda n: round (3.31*log(n_X, 10)+1) \
+        if round (3.31*log(n_X, 10)+1) >=2 else 2
     K_X = group_int_number(n_X)
     # проверка гипотезы о значимости линейной корреляционной связи
     if corr_ratio >= abs(corr_coef):
-        F_line_corr_sign_calc = (n_X - K_X)/(K_X - 2) * (corr_ratio**2 - corr_coef**2) / (1 - corr_ratio**2)
+        F_line_corr_sign_calc = \
+            (n_X - K_X)/(K_X - 2) * \
+                (corr_ratio**2 - corr_coef**2) / (1 - corr_ratio**2)
         dfn = K_X - 2
         dfd = n_X - K_X
-        F_line_corr_sign_table = sci.stats.f.ppf(p_level, dfn, dfd, loc=0, scale=1)
-        comparison_F_calc_table = F_line_corr_sign_calc >= F_line_corr_sign_table
-        a_line_corr_sign_calc = 1 - sci.stats.f.cdf(F_line_corr_sign_calc, dfn, dfd, loc=0, scale=1)
+        F_line_corr_sign_table = \
+            sci.stats.f.ppf(p_level, dfn, dfd, loc=0, scale=1)
+        comparison_F_calc_table = \
+            F_line_corr_sign_calc >= F_line_corr_sign_table
+        a_line_corr_sign_calc = \
+            1-sci.stats.f.cdf(F_line_corr_sign_calc, dfn, dfd, loc=0, scale=1)
         comparison_a_calc_a_level = a_line_corr_sign_calc <= a_level
-        conclusion_null_hypothesis_check = 'accepted' if F_line_corr_sign_calc < F_line_corr_sign_table else 'unaccepted'
-        conclusion_line_corr_sign = 'linear' if conclusion_null_hypothesis_check == 'accepted' else 'non linear'
+        conclusion_null_hypothesis_check = 'accepted' \
+            if F_line_corr_sign_calc < F_line_corr_sign_table else 'unaccepted'
+        conclusion_line_corr_sign = 'linear' \
+            if conclusion_null_hypothesis_check == 'accepted' else 'non linear'
     else:
         F_line_corr_sign_calc = ''
         F_line_corr_sign_table = ''
         comparison_F_calc_table = ''
         a_line_corr_sign_calc = ''
         comparison_a_calc_a_level = ''
-        conclusion_null_hypothesis_check = 'Attention! The correlation ratio is less than the correlation coefficient'
+        conclusion_null_hypothesis_check = \
+            'Attention! The correlation ratio is less than the correlation coefficient'
         conclusion_line_corr_sign = '-'
     
     # формируем результат            
@@ -3564,11 +6524,41 @@ def line_corr_sign_check(X, Y, p_level=0.95, orientation='XY'):
     return result
 
 
+
 #------------------------------------------------------------------------------
 #   Функция rank_corr_coef_check
+#
+#   Расчет и проверка значимости коэффициентов ранговой корреляции Кендалла и 
+#   Спирмена
 #------------------------------------------------------------------------------
 
-def rank_corr_coef_check(X, Y, p_level=0.95, scale='Evans'):
+def rank_corr_coef_check(
+        X, Y, 
+        p_level:    float = 0.95, 
+        scale:      str = 'Evans'):
+
+    """
+    Расчет и проверка значимости коэффициентов ранговой корреляции Кендалл и 
+    Спирмена.
+        
+    Args:
+        X, Y:                      
+            массивы исходных данных.
+            
+        p_level (float, optional):    
+            доверительная вероятность. 
+            Defaults to 0.95.
+
+        scale (str, optional):               
+            шкала для оценки тесноты связи.
+            Defaults to 'Evans'.
+            
+    Returns:
+        result (pd.core.frame.DataFrame):
+            результат.
+    
+    """
+    
     a_level = 1 - p_level
     X = np.array(X)
     Y = np.array(Y)
@@ -3577,31 +6567,44 @@ def rank_corr_coef_check(X, Y, p_level=0.95, scale='Evans'):
     # коэффициент ранговой корреляции Кендалл
     rank_corr_coef_tau, a_rank_corr_coef_tau_calc = sps.kendalltau(X, Y)
     # коэффициент ранговой корреляции Спирмена
-    rank_corr_coef_spearman, a_rank_corr_coef_spearman_calc = sps.spearmanr(X, Y)
+    rank_corr_coef_spearman, a_rank_corr_coef_spearman_calc = \
+        sps.spearmanr(X, Y)
     # критические значения коэффициентов
     if n_X >= 10:
-        u_p_tau = sps.norm.ppf(p_level, 0, 1)    # табл.значение квантиля норм.распр.
-        rank_corr_coef_tau_crit_value = u_p_tau * sqrt(2*(2*n_X + 5) / (9*n_X*(n_X-1)))
+        # табл.значение квантиля норм.распр.
+        u_p_tau = sps.norm.ppf(p_level, 0, 1)    
+        rank_corr_coef_tau_crit_value = \
+            u_p_tau * sqrt(2*(2*n_X + 5) / (9*n_X*(n_X-1)))
         u_p_spearman = sps.norm.ppf((1+p_level)/2, 0, 1)
         rank_corr_coef_spearman_crit_value = u_p_spearman * 1/sqrt(n_X-1)
     else:
         rank_corr_coef_tau_crit_value = '-'
         rank_corr_coef_spearman_crit_value = '-'
     # проверка гипотезы о значимости
-    conclusion_tau = 'significance' if a_rank_corr_coef_tau_calc <= a_level else 'not significance'
-    conclusion_spearman = 'significance' if a_rank_corr_coef_spearman_calc <= a_level else 'not significance'
+    conclusion_tau = 'significance' if a_rank_corr_coef_tau_calc <= a_level \
+        else 'not significance'
+    conclusion_spearman = 'significance' if \
+        a_rank_corr_coef_spearman_calc <= a_level else 'not significance'
     # оценка тесноты связи
     if scale=='Cheddok':
-        conclusion_scale_tau = scale + ': ' + Cheddock_scale_check(rank_corr_coef_tau)
-        conclusion_scale_spearman = scale + ': ' + Cheddock_scale_check(rank_corr_coef_spearman)
+        conclusion_scale_tau = scale + ': ' + \
+            Cheddock_scale_check(rank_corr_coef_tau)
+        conclusion_scale_spearman = scale + ': ' + \
+            Cheddock_scale_check(rank_corr_coef_spearman)
     elif scale=='Evans':
-        conclusion_scale_tau = scale + ': ' + Evans_scale_check(rank_corr_coef_tau)
-        conclusion_scale_spearman = scale + ': ' + Evans_scale_check(rank_corr_coef_spearman)
+        conclusion_scale_tau = scale + ': ' + \
+            Evans_scale_check(rank_corr_coef_tau)
+        conclusion_scale_spearman = scale + ': ' + \
+            Evans_scale_check(rank_corr_coef_spearman)
     # доверительные интервалы (только для коэффициента Кендалла - см.[Айвазян, т.2, с.116])
     if conclusion_tau == 'significance':
-        rank_corr_coef_tau_delta = sps.norm.ppf((1+p_level)/2, 0, 1) * sqrt(2/n_X * (1 - rank_corr_coef_tau**2))
-        rank_corr_coef_tau_int_low = rank_corr_coef_tau - rank_corr_coef_tau_delta if rank_corr_coef_tau - rank_corr_coef_tau_delta else 0
-        rank_corr_coef_tau_int_high = rank_corr_coef_tau + rank_corr_coef_tau_delta if rank_corr_coef_tau + rank_corr_coef_tau_delta <= 1 else 1
+        rank_corr_coef_tau_delta = sps.norm.ppf((1+p_level)/2, 0, 1) * \
+            sqrt(2/n_X * (1 - rank_corr_coef_tau**2))
+        rank_corr_coef_tau_int_low = rank_corr_coef_tau - \
+            rank_corr_coef_tau_delta if rank_corr_coef_tau - rank_corr_coef_tau_delta else 0
+        rank_corr_coef_tau_int_high = rank_corr_coef_tau + \
+            rank_corr_coef_tau_delta if rank_corr_coef_tau + \
+                rank_corr_coef_tau_delta <= 1 else 1
     # формируем результат            
     result = pd.DataFrame({
         'name': ('Kendall', 'Spearman'),
@@ -3610,18 +6613,22 @@ def rank_corr_coef_check(X, Y, p_level=0.95, scale='Evans'):
         'p_level': (p_level),
         'a_level': (a_level),
         'a_calc': (a_rank_corr_coef_tau_calc, a_rank_corr_coef_spearman_calc),
-        'a_calc <= a_level': (a_rank_corr_coef_tau_calc <= a_level, a_rank_corr_coef_spearman_calc <= a_level),
-        'crit_value': (rank_corr_coef_tau_crit_value, rank_corr_coef_spearman_crit_value),
+        'a_calc <= a_level': (a_rank_corr_coef_tau_calc <= a_level, \
+                              a_rank_corr_coef_spearman_calc <= a_level),
+        'crit_value': (rank_corr_coef_tau_crit_value, \
+                       rank_corr_coef_spearman_crit_value),
         'crit_value >= coef_value': (
-            rank_corr_coef_tau >= rank_corr_coef_tau_crit_value if rank_corr_coef_tau_crit_value != '-' else '-',
-            rank_corr_coef_spearman >= rank_corr_coef_spearman_crit_value if rank_corr_coef_spearman_crit_value != '-' else '-'),
+            rank_corr_coef_tau >= rank_corr_coef_tau_crit_value if \
+                rank_corr_coef_tau_crit_value != '-' else '-',
+            rank_corr_coef_spearman >= rank_corr_coef_spearman_crit_value if \
+                rank_corr_coef_spearman_crit_value != '-' else '-'),
         'significance_check': (conclusion_tau, conclusion_spearman),
         'conf_int_low': (
-            rank_corr_coef_tau_int_low if conclusion_tau == 'significance' else '-',
-            '-'),
+            rank_corr_coef_tau_int_low if conclusion_tau == 'significance' \
+                else '-', '-'),
         'conf_int_high': (
-            rank_corr_coef_tau_int_high if conclusion_tau == 'significance' else '-',
-            '-'),
+            rank_corr_coef_tau_int_high if \
+                conclusion_tau == 'significance' else '-', '-'),
         'scale': (conclusion_scale_tau, conclusion_scale_spearman)
         })
     
@@ -4576,5 +7583,1305 @@ def simple_approximation(
         display(Y_calc_graph_df)
                     
     return result    
+
+
+
+#==============================================================================
+#               ФУНКЦИИ ДЛЯ АНАЛИЗА ВРЕМЕННЫХ РЯДОВ
+#==============================================================================
+
+
+#------------------------------------------------------------------------------
+#   Функция adf_test
+#------------------------------------------------------------------------------
+
+def adf_test(timeseries, p_level=0.95):
+    from statsmodels.tsa.stattools import adfuller
+    a_level = 1 - p_level
+    print("Dickey-Fuller Test:\n")
+    
+    (H0, H1) = ('H0: The time series is non-stationary',
+                'H1: The time series is stationary')
+    print(f'{H0}\n{H1}\n')
+    
+    dftest = adfuller(timeseries, autolag="AIC")
+    dfoutput = pd.Series(
+        dftest[0:4],
+        index=["Test Statistic", "p-value", "#Lags Used", "Number of Observations Used",],    )
+    for key, value in dftest[4].items():
+        dfoutput["Critical Value (%s)" % key] = value
+    print(dfoutput)
+    
+    a_calc = dfoutput['p-value']
+    conclusion = \
+        f'The time series is non-stationary (p_calc = {a_calc} >= a_level = {a_level})' if a_calc >= a_level else \
+        f'The time series is stationary (a_calc = {a_calc} < a_level = {a_level})'
+    print(conclusion, '\n')
+    
+
+#------------------------------------------------------------------------------
+#   Функция kpss_test
+#------------------------------------------------------------------------------    
+
+def kpss_test(timeseries, regression='c', p_level=0.95):
+    from statsmodels.tsa.stattools import kpss
+    a_level = 1 - p_level
+    print("KPSS Test:")
+    
+    H0 = \
+        'H0: The data is stationary around a constant' if regression=='c' else \
+        'H0: The data is stationary around a trend'
+    H1 = 'H1: The data is non-stationary'
+    print(f'{H0}\n{H1}\n')
+    
+    kpsstest = kpss(timeseries, regression=regression, nlags="auto", store=False)
+    kpss_output = pd.Series(
+        kpsstest[0:3], 
+        index=["Test Statistic", "p-value", "Lags Used"])
+    for key, value in kpsstest[3].items():
+        kpss_output["Critical Value (%s)" % key] = value
+    print(kpss_output)
+    
+    a_calc = kpss_output['p-value']
+    
+    if regression=='c':
+        conclusion = \
+            f'The data is stationary around a constant (p_calc = {a_calc} >= a_level = {a_level})' if a_calc >= a_level else \
+            f'The data is non-stationary (a_calc = {a_calc} < a_level = {a_level})'
+    else:
+        conclusion = \
+            f'The data is stationary around a trend (p_calc = {a_calc} >= a_level = {a_level})' if a_calc >= a_level else \
+            f'The data is non-stationary (a_calc = {a_calc} < a_level = {a_level})'
+    print(conclusion, '\n')
+
+
+#------------------------------------------------------------------------------
+#   Функция adf_test_sm
+#------------------------------------------------------------------------------
+
+def ADF_test_sm(
+    timeseries,
+    regression: list=['n', 'c', 'ct', 'ctt'],    # “c” : constant only (default). “ct” : constant and trend. “ctt” : constant, and linear and quadratic trend. “n” : no constant, no trend.
+    autolag: str='AIC',     # {“AIC”, “BIC”, “t-stat”, None}
+    p_level: float=0.95):
+    
+    from statsmodels.tsa.stattools import adfuller
+    
+    a_level = 1 - p_level
+    
+    # https://www.statsmodels.org/dev/examples/notebooks/generated/stationarity_detrending_adf_kpss.html
+    
+    # Dickey-Fuller (ADF) test
+    # https://ru.wikipedia.org/wiki/Тест_Дики_—_Фуллера, https://ru.wikipedia.org/wiki/%D0%95%D0%B4%D0%B8%D0%BD%D0%B8%D1%87%D0%BD%D1%8B%D0%B9_%D0%BA%D0%BE%D1%80%D0%B5%D0%BD%D1%8C
+    # https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.adfuller.html#statsmodels.tsa.stattools.adfuller
+    
+    (H0, H1) = ('The time series is non-stationary',
+                'The time series is stationary')
+    display(pd.DataFrame({'ADF test': (H0, H1)},
+                         index=('H0', 'H1')))
+    
+    result_dict = dict()    
+    for elem in regression:
+        result_temp = adfuller(
+            timeseries,
+            regression=elem,
+            autolag=autolag)
+        #print(result_temp)
+        result_dict[elem] = [result_temp]
+        
+    a_calc_list = [result_dict[elem][0][1] for elem in regression]
+        
+    result = pd.DataFrame({
+        'test': ('ADF test' for elem in regression),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'regression': (regression),
+        'test_statistic': (result_dict[elem][0][0] for elem in regression),
+        'crit_value (10%)': (result_dict[elem][0][4]['10%'] for elem in regression),
+        'crit_value (5%)': (result_dict[elem][0][4]['5%'] for elem in regression),
+        'crit_value (1%)': (result_dict[elem][0][4]['1%'] for elem in regression),
+        'a_calc': (a_calc_list),
+        'a_calc >= a_level': (a_calc >= a_level for a_calc in a_calc_list),
+        'null_hypothesis_check': ('accepted' if a_calc >= a_level else 'unaccepted' for a_calc in a_calc_list),
+        'conclusion': ('The time series is non-stationary' if a_calc >= a_level else 'The time series is stationary' for a_calc in a_calc_list)})
+        
+    return result
+    
+
+#------------------------------------------------------------------------------
+#   Функция kpss_test_sm
+#------------------------------------------------------------------------------        
+
+def KPSS_test_sm(
+    timeseries,
+    regression: list=['c', 'ct'],
+    nlags='auto',
+    p_level: float=0.95):
+    
+    from statsmodels.tsa.stattools import kpss
+    
+    a_level = 1 - p_level
+    
+    # https://www.statsmodels.org/dev/examples/notebooks/generated/stationarity_detrending_adf_kpss.html
+    
+    # Kwiatkowski–Phillips–Schmidt–Shin (KPSS) test
+    # https://www.statsmodels.org/dev/generated/statsmodels.tsa.stattools.kpss.html
+    
+    (H0_1, H0_2, H1) = ('The data is stationary around a constant (if regression = "c")',
+                        'The data is stationary around a trend (if regression = "ct")',
+                        'The data is non-stationary')
+    display(pd.DataFrame({'KPSS test': (H0_1, H0_2, H1)},
+                         index=(r'H0_1', r'H0_2', 'H1')))
+    
+    import warnings
+    warnings.filterwarnings('ignore')
+
+    result_dict = dict()    
+    for elem in regression:
+        result_temp = kpss(
+            timeseries,
+            regression=elem,
+            nlags=nlags)
+        #print(result_temp)
+        result_dict[elem] = [result_temp]
+        
+    a_calc_list = [result_dict[elem][0][1] for elem in regression]
+        
+    conclusion_list = list()
+    for index, elem in enumerate(regression):
+        if elem == 'c':
+            conclusion_list.append('The data is stationary around a constant' if a_calc_list[index] >= a_level else 'The data is non-stationary')
+        if elem == 'ct':
+            conclusion_list.append('The data is stationary around a trend' if a_calc_list[index] >= a_level else 'The data is non-stationary')
+
+    result = pd.DataFrame({
+        'test': ('KPSS test' for elem in regression),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'regression': (regression),
+        'test_statistic': (result_dict[elem][0][0] for elem in regression),
+        'crit_value (10%)': (result_dict[elem][0][3]['10%'] for elem in regression),
+        'crit_value (5%)': (result_dict[elem][0][3]['5%'] for elem in regression),
+        'crit_value (2.5%)': (result_dict[elem][0][3]['2.5%'] for elem in regression),
+        'crit_value (1%)': (result_dict[elem][0][3]['1%'] for elem in regression),
+        'a_calc': (a_calc_list),
+        'a_calc >= a_level': (a_calc >= a_level for a_calc in a_calc_list),
+        'null_hypothesis_check': ('accepted' if a_calc >= a_level else 'unaccepted' for a_calc in a_calc_list),
+        'conclusion': (conclusion_list)})
+            
+    warnings.filterwarnings('default')        
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   Функция ADF_KPSS_PP_test_pmdarima
+#------------------------------------------------------------------------------
+
+def ADF_KPSS_PP_test_pmdarima(
+    timeseries,
+    p_level: float=0.95):  
+    
+    a_level = 1 - p_level
+    
+    # Dickey–Fuller test (ADF)
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.ADFTest.html#pmdarima.arima.ADFTest
+    from pmdarima.arima import ADFTest  
+    result_ADF = ADFTest(alpha = a_level)
+    (a_calc_ADF, sig_ADF) = result_ADF.should_diff(timeseries)
+    
+    # Kwiatkowski–Phillips–Schmidt–Shin test (KPSS)
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.KPSSTest.html#pmdarima.arima.KPSSTest
+    from pmdarima.arima import KPSSTest  
+    result_KPSS = KPSSTest(alpha = a_level)
+    (a_calc_KPSS, sig_KPSS) = result_KPSS.should_diff(timeseries)
+    
+    # Phillips–Perron test (PP)
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.PPTest.html#pmdarima.arima.PPTest
+    from pmdarima.arima import PPTest  
+    result_PP = PPTest(alpha = a_level)
+    (a_calc_PP, sig_PP) = result_PP.should_diff(timeseries)
+    
+    # d-value
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.ndiffs.html
+    from pmdarima.arima.utils import ndiffs
+    d_value_ADF = ndiffs(timeseries, test='adf')
+    d_value_KPSS = ndiffs(timeseries, test='kpss')
+    d_value_PP = ndiffs(timeseries, test='pp') 
+    
+    conclusion_list = ['The time series is non-stationary' if sig 
+                       else 'The time series is stationary' 
+                       for sig in [sig_ADF, sig_KPSS, sig_PP]]   
+    
+    result = pd.DataFrame({
+        'test': ('ADF test', 'KPSS test', 'PP test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'a_calc': (a_calc_ADF, a_calc_KPSS, a_calc_PP),
+        'significance of a_calc': (sig_ADF, sig_KPSS, sig_PP),
+        'conclusion': (conclusion_list),
+        'd-value': (d_value_ADF, d_value_KPSS, d_value_PP)})
+    
+    return result
+
+
+#------------------------------------------------------------------------------
+#   Функция ADF_KPSS_PP_test_pmdarima
+#------------------------------------------------------------------------------
+
+def CH_OCSB_test_pmdarima(
+    timeseries,
+    m: int,       # Number of seasonal periods
+    max_D: int    # Maximum number of seasonal differences allowed. The estimated value of D will not exceed max_D.
+    ):
+    
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.nsdiffs.html#pmdarima.arima.nsdiffs
+
+    from pmdarima.arima import nsdiffs
+    
+    # Canova-Hansen test (CH)
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.CHTest.html#pmdarima.arima.CHTest
+    D_CH = nsdiffs(timeseries, m=m, max_D=max_D, test='ch')
+    
+    # Osborn, Chui, Smith, and Birchenhall test (OCSB)
+    # https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.OCSBTest.html#pmdarima.arima.OCSBTest
+    D_OCSB = nsdiffs(timeseries, m=m, max_D=max_D, test='ocsb')
+    
+    result = pd.DataFrame({
+        'test': ('CH test', 'OCSB test'),
+        'm': (m),
+        'max_D': (max_D),
+        'D-value': (D_CH, D_OCSB)})
+    
+    return result
+
+
+
+#==============================================================================
+#               SCIKIT-LEARN
+#==============================================================================
+
+
+#------------------------------------------------------------------------------
+#   Функция для оценки моделей средствами **scikit-learn** 
+#   (https://scikit-learn.ru/3-3-metrics-and-scoring-quantifying-the-quality-of-predictions/):
+#------------------------------------------------------------------------------
+
+def sklearn_error_metrics_regression(Y_test, Y_pred, model_name=''):
+    import sklearn
+        
+    # проверка наличия отрицательных значений
+    check_negative = True if (np.any(Y_test<0) or np.any(Y_pred<0)) else False
+    
+    # explained_variance_score (Explained variation / Объясненная вариации)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.explained_variance_score.html#sklearn.metrics.explained_variance_score
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#explained-variance-score
+    # https://en.wikipedia.org/wiki/Explained_variation
+    explained_variance_score = sklearn.metrics.explained_variance_score(Y_test, Y_pred)
+    
+    # max_error (Максимальная линейная ошибка)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.max_error.html#sklearn.metrics.max_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#max-error
+    max_error = sklearn.metrics.max_error(Y_test, Y_pred)
+    
+    # neg_mean_absolute_error (Mean absolute error / Средняя абсолютная ошибка)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html#sklearn.metrics.mean_absolute_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#mean-absolute-error
+    # https://en.wikipedia.org/wiki/Mean_absolute_error
+    MAE = sklearn.metrics.mean_absolute_error(Y_test, Y_pred)
+    
+    # neg_mean_squared_error (Mean squared error / Среднеквадратическая ошибка)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html#sklearn.metrics.mean_squared_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#mean-squared-error
+    # https://en.wikipedia.org/wiki/Mean_squared_error
+    MSE = sklearn.metrics.mean_squared_error(Y_test, Y_pred)
+    
+    # neg_root_mean_squared_error
+    RMSE = np.sqrt(MSE)    
+    
+    # neg_mean_squared_log_error (Mean squared logarithmic error / Среднеквадратическая логарифмическая ошибка)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html#sklearn.metrics.mean_squared_log_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#mean-squared-log-error
+    
+    MSLE = sklearn.metrics.mean_squared_log_error(Y_test, Y_pred) if not(check_negative) else '-'
+    
+    # neg_median_absolute_error (Median absolute error / Средняя абсолютная ошибка)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.median_absolute_error.html#sklearn.metrics.median_absolute_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#median-absolute-error
+    median_absolute_error = sklearn.metrics.median_absolute_error(Y_test, Y_pred)
+    
+    # r2 (Coefficient of determination)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html#sklearn.metrics.r2_score
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#r2-score
+    # https://en.wikipedia.org/wiki/Coefficient_of_determination
+    R2 = sklearn.metrics.r2_score(Y_test, Y_pred)
+    
+    # neg_mean_poisson_deviance (Mean Poisson deviance / Среднее отклонение Пуассона)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_poisson_deviance.html#sklearn.metrics.mean_poisson_deviance
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#mean-tweedie-deviance
+    # https://en.wikipedia.org/wiki/Tweedie_distribution#The_Tweedie_deviance
+    check_negative_mean_poisson_deviance = True if (np.any(Y_test<0) or np.any(Y_pred<=0)) else False
+    mean_poisson_deviance = sklearn.metrics.mean_poisson_deviance(Y_test, Y_pred) if not(check_negative_mean_poisson_deviance) else '-'
+    
+    # neg_mean_gamma_deviance
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_gamma_deviance.html#sklearn.metrics.mean_gamma_deviance
+    check_negative_mean_gamma_deviance = True if (np.any(Y_test<0) or np.any(Y_pred<=0)) else False
+    mean_gamma_deviance = sklearn.metrics.mean_gamma_deviance(Y_test, Y_pred) if not(check_negative_mean_gamma_deviance) else '-'
+    
+    # neg_mean_tweedie_deviance
+    mean_tweedie_deviance = sklearn.metrics.mean_tweedie_deviance(Y_test, Y_pred) if not(check_negative) else '-'
+    
+    # neg_mean_absolute_percentage_error (Mean absolute percentage error / Средняя абсолютная ошибка в процентах)
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_percentage_error.html#sklearn.metrics.mean_absolute_percentage_error
+    # https://scikit-learn.org/stable/modules/model_evaluation.html#mean-absolute-percentage-error
+    MAPE = sklearn.metrics.mean_absolute_percentage_error(Y_test, Y_pred)
+    
+    model_error_metrics = {
+        'explained_variance_score': explained_variance_score,
+        'max_error': max_error,
+        'neg_mean_absolute_error': MAE,
+        'neg_mean_squared_error': MSE,
+        'neg_root_mean_squared_error': RMSE,
+        'neg_mean_squared_log_error': MSLE,
+        'median_absolute_error': median_absolute_error,
+        'r2': R2,
+        'neg_mean_poisson_deviance': mean_poisson_deviance,
+        'neg_mean_gamma_deviance': mean_gamma_deviance,
+        'neg_mean_tweedie_deviance': mean_tweedie_deviance,
+        'neg_mean_absolute_percentage_error': MAPE}
+    
+    result = pd.DataFrame({
+        'Expl.var.score': explained_variance_score,
+        'Max error': max_error,
+        'MAE': MAE,
+        'MSE': MSE,
+        'RMSE': RMSE,
+        'MSLE': MSLE,
+        'Med.abs.error': median_absolute_error,
+        'R2': R2,
+        'Mean Poisson dev.': mean_poisson_deviance,
+        'Mean gamma dev.': mean_gamma_deviance,
+        'Mean Tweedie dev.': mean_tweedie_deviance,
+        'MAPE': MAPE},
+        index=[model_name])        
+        
+    return model_error_metrics, result  
+
+
+
+#==============================================================================
+#               СТАРЫЕ ФУНКЦИИ
+#==============================================================================
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_scatterplot_sns
+#------------------------------------------------------------------------------
+
+def graph_scatterplot_sns(
+    X, Y,
+    Xmin=None, Xmax=None,
+    Ymin=None, Ymax=None,
+    color='orange',
+    title_figure=None, title_figure_fontsize=18,
+    title_axes=None, title_axes_fontsize=16,
+    x_label=None,
+    y_label=None,
+    label_fontsize=14, tick_fontsize=12,
+    label_legend='', label_legend_fontsize=12,
+    s=50,
+    graph_size=(297/INCH, 210/INCH),
+    file_name=None):
+    
+    X = np.array(X)
+    Y = np.array(Y)
+    
+    if not(Xmin) and not(Xmax):
+        Xmin=min(X)*0.99
+        Xmax=max(X)*1.01
+    if not(Ymin) and not(Ymax):
+        Ymin=min(Y)*0.99
+        Ymax=max(Y)*1.01       
+    
+    fig, axes = plt.subplots(figsize=graph_size)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    #data_df = data_XY_df
+    sns.scatterplot(
+        x=X, y=Y,
+        label=label_legend,
+        s=s,
+        palette=['orange'], color=color,
+        ax=axes)
+    axes.set_xlim(Xmin, Xmax)
+    axes.set_ylim(Ymin, Ymax)       
+    axes.axvline(x = 0, color = 'k', linewidth = 1)
+    axes.axhline(y = 0, color = 'k', linewidth = 1)
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    #axes.tick_params(labelsize = tick_fontsize)
+    axes.legend(prop={'size': label_legend_fontsize})
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return    
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_scatterplot_mpl_np
+#------------------------------------------------------------------------------
+
+def graph_plot_mpl_np(
+    X, Y,
+    Xmin_in=None, Xmax_in=None,
+    Ymin_in=None, Ymax_in=None,
+    color='orange',
+    title_figure=None, title_figure_fontsize=18,
+    title_axes=None, title_axes_fontsize=16,
+    x_label=None,
+    y_label=None,
+    label_fontsize=14, tick_fontsize=12,
+    label_legend='', label_legend_fontsize=12,
+    graph_size=(297/INCH, 210/INCH),
+    file_name=None):
+    
+    sns.set_style("whitegrid")    # настройка цветовой гаммы
+    fig, axes = plt.subplots(figsize=graph_size)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    if (Xmin_in != None) and (Xmax_in != None):
+        Xmin=Xmin_in
+        Xmax=Xmax_in
+        axes.set_xlim(Xmin, Xmax)
+            
+    if (Ymin_in != None) and (Ymax_in != None):
+        Ymin=Ymin_in
+        Ymax=Ymax_in
+        axes.set_ylim(Ymin, Ymax)        
+    
+    axes.plot(
+        X, Y,
+        linestyle = "-",
+        color=color,
+        linewidth=3,
+        label=label_legend)
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.legend(prop={'size': label_legend_fontsize})
+    
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+    
+#------------------------------------------------------------------------------
+#   Функция graph_lineplot_sns_np
+#------------------------------------------------------------------------------
+
+def graph_lineplot_sns(
+    X, Y,
+    Xmin_in=None, Xmax_in=None,
+    Ymin_in=None, Ymax_in=None,
+    color='orange',
+    title_figure=None, title_figure_fontsize=18,
+    title_axes=None, title_axes_fontsize=16,
+    x_label=None,
+    y_label=None,
+    label_fontsize=14, tick_fontsize=12,
+    label_legend='', label_legend_fontsize=12,
+    graph_size=(297/INCH, 210/INCH),
+    file_name=None):
+    
+    sns.set_style("darkgrid")    # настройка цветовой гаммы
+    fig, axes = plt.subplots(figsize=graph_size)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    if (Xmin_in != None) and (Xmax_in != None):
+        Xmin=Xmin_in
+        Xmax=Xmax_in
+        axes.set_xlim(Xmin, Xmax)
+            
+    if (Ymin_in != None) and (Ymax_in != None):
+        Ymin=Ymin_in
+        Ymax=Ymax_in
+        axes.set_ylim(Ymin, Ymax)        
+        
+    sns.lineplot(
+        x=X, y=Y,
+        palette=['orange'], color=color,
+        linewidth=3,
+        legend=True,
+        label=label_legend,
+        ax=axes)
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    #axes.axvline(x = 0, color = 'k', linewidth = 1)
+    #axes.axhline(y = 0, color = 'k', linewidth = 1)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.tick_params(labelsize = tick_fontsize)
+    axes.legend(prop={'size': label_legend_fontsize})
+    
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_scatterplot_3D_mpl
+#------------------------------------------------------------------------------
+
+def graph_scatterplot_3D_mpl(
+    X, Y, Z,
+    elev=-160, azim=-60,
+    Xmin_in=0, Xmax_in=3000,
+    Ymin_in=-25, Ymax_in=25,
+    Zmin_in=0, Zmax_in=20,
+    color='orange',
+    title_figure=None, title_figure_fontsize=18,
+    title_axes=None, title_axes_fontsize=16,
+    x_label=None,
+    y_label=None,
+    z_label=None,
+    label_fontsize=11, tick_fontsize=10,
+    label_legend='', label_legend_fontsize=12,
+    s=50,
+    graph_size=(420/INCH, 297/INCH),
+    file_name=None):
+    
+    sns.set_style("darkgrid")    # настройка цветовой гаммы
+    fig = plt.figure(figsize=graph_size)
+    axes = fig.add_subplot(111, projection='3d')
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    axes.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    if (Xmin_in != None) and (Xmax_in != None):
+        Xmin=Xmin_in
+        Xmax=Xmax_in
+        axes.set_xlim(Xmin, Xmax)
+            
+    if (Ymin_in != None) and (Ymax_in != None):
+        Ymin=Ymin_in
+        Ymax=Ymax_in
+        axes.set_ylim(Ymin, Ymax)        
+    
+    if (Zmin_in != None) and (Zmax_in != None):
+        Zmin=Zmin_in
+        Zmax=Zmax_in
+        axes.set_zlim(Zmin, Zmax)  
+    
+    axes.scatter(
+        X, Y, Z,
+        label=label_legend,
+        s=50,
+        color=color)
+    
+    axes.set_xlabel(x_label, fontsize = label_fontsize)
+    axes.set_ylabel(y_label, fontsize = label_fontsize)
+    axes.set_zlabel(z_label, fontsize = label_fontsize)
+    axes.view_init(elev=elev, azim=azim)   
+    #axes.tick_params(labelsize = tick_fontsize)
+    axes.legend(prop={'size': label_legend_fontsize})
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return   
+
+
+
+#------------------------------------------------------------------------------
+#   Функция graph_hist_boxplot_mpl
+#
+#   Принимает в качестве аргумента np.ndarray и строит совмещенный график - 
+#   гистограмму и коробчатую диаграмму на одном рисунке (Figure) - с помощью 
+#    библиотеки Mathplotlib.
+#------------------------------------------------------------------------------    
+    
+
+def graph_hist_boxplot_mpl(
+    X,
+    Xmin=None, Xmax=None,
+    bins_hist='auto',
+    density_hist=False,
+    title_figure=None, title_figure_fontsize=18,
+    title_axes=None, title_axes_fontsize=16,
+    x_label=None,
+    label_fontsize=14, tick_fontsize=12, label_legend_fontsize=10,
+    graph_size=(297/INCH, 210/INCH),
+    file_name=None):
+    
+    X = np.array(X)
+        
+    if not(Xmin) and not(Xmax):
+        Xmin=min(X)*0.99
+        Xmax=max(X)*1.01
+        
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size)
+    ax1 = plt.subplot(2,1,1)    # для гистограммы
+    ax2 = plt.subplot(2,1,2)    # для коробчатой диаграммы  
+    
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    
+    # заголовок области рисования (Axes)
+    ax1.set_title(title_axes, fontsize = title_axes_fontsize)
+    
+    # выбор вида гистограммы (density=True/False - плотность/абс.частота) и параметры по оси OY
+    ymax = max(np.histogram(X, bins=bins_hist, density=density_hist)[0])
+    if density_hist:
+        label_hist = "эмпирическая плотность распределения"
+        ax1.set_ylabel('Относительная плотность', fontsize = label_fontsize)
+        ax1.set_ylim(0, ymax*1.4)
+    else:
+        label_hist = "эмпирическая частота"
+        ax1.set_ylabel('Абсолютная частота', fontsize = label_fontsize)
+        ax1.set_ylim(0, ymax*1.4)
+
+    # данные для графика плотности распределения
+    nx = 100
+    hx = (Xmax - Xmin)/(nx - 1)
+    x1 = np.linspace(Xmin, Xmax, nx)
+    #hx = 0.1; nx =  int(floor((Xmax - Xmin)/hx)+1)
+    #x1 = np.linspace(Xmin, Xmax, nx)
+    y1 = sps.norm.pdf(x1, X.mean(), X.std(ddof = 1))
+    
+    # рендеринг гистограммы
+    if density_hist:
+        ax1.hist(
+            X,
+            bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', '    ', 'stone', 'rice', 'sturges', 'sqrt')
+            density=density_hist,
+            histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
+            orientation='vertical',   # 'vertical', 'horizontal'
+            color = "#1f77b4",
+            label=label_hist)
+        ax1.plot(
+            x1, y1,
+            linestyle = "-",
+            color = "r",
+            linewidth = 2,
+            label = 'теоретическая нормальная кривая')
+    else:
+        ax1.hist(
+            X,
+            bins=bins_hist,    # выбор числа интервалов ('auto', 'fd', 'doane', 'scott', 'stone', 'rice', 'sturges', 'sqrt')
+            density=density_hist,
+            histtype='bar',    # 'bar', 'barstacked', 'step', 'stepfilled'
+            orientation='vertical',   # 'vertical', 'horizontal'
+            color = "#1f77b4",
+            label=label_hist)    
+        k = len(np.histogram(X, bins=bins_hist, density=density_hist)[0])
+        y2 = y1*len(X)*(max(X)-min(X))/k
+        ax1.plot(
+            x1, y2,
+            linestyle = "-",
+            color = "r",
+            linewidth = 2,
+            label = 'теоретическая нормальная кривая')
+    
+    # Среднее значение, медиана, мода на графике
+    ax1.axvline(
+        X.mean(),
+        color='magenta', label = 'среднее значение', linewidth = 2)
+    ax1.axvline(
+        np.median(X),
+        color='orange', label = 'медиана', linewidth = 2)
+    ax1.axvline(stat.mode(X),
+        color='cyan', label = 'мода', linewidth = 2)
+    
+    ax1.set_xlim(Xmin, Xmax)
+    ax1.tick_params(labelsize = tick_fontsize)
+    ax1.grid(True)
+    ax1.legend(fontsize = label_legend_fontsize)
+    
+    # рендеринг коробчатой диаграммы
+    ax2.boxplot(
+        X,
+        vert=False,
+        notch=False,
+        widths=0.5,
+        patch_artist=True)
+    ax2.set_xlim(Xmin, Xmax)
+    ax2.set_xlabel(x_label, fontsize = label_fontsize)
+    ax2.tick_params(labelsize = tick_fontsize)
+    ax2.grid(True)
+        
+    # отображение графика на экране и сохранение в файл
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Shapiro_Wilk_test
+#   функция для обработки реализации теста Шапиро-Уилка
+#------------------------------------------------------------------------------
+
+def Shapiro_Wilk_test(data, p_level=0.95, DecPlace=5):
+    a_level = 1 - p_level
+    data = np.array(data)
+    result = sci.stats.shapiro(data)
+    s_calc = result.statistic    # расчетное значение статистики критерия
+    a_calc = result.pvalue    # расчетный уровень значимости
+    
+    print(f"Расчетный уровень значимости: a_calc = {round(a_calc, DecPlace)}")
+    print(f"Заданный уровень значимости: a_level = {round(a_level, DecPlace)}")
+    
+    if a_calc >= a_level:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} >= a_level = {round(a_level, DecPlace)}" + \
+            ", то гипотеза о нормальности распределения по критерию Шапиро-Уилка ПРИНИМАЕТСЯ"
+    else:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} < a_level = {round(a_level, DecPlace)}" + \
+            ", то гипотеза о нормальности распределения по критерию Шапиро-Уилка ОТВЕРГАЕТСЯ"
+    print(conclusion_ShW_test)
+
+
+
+#------------------------------------------------------------------------------
+#   Функция Epps_Pulley_test
+#------------------------------------------------------------------------------    
+
+def Epps_Pulley_test(data, p_level=0.95):
+    a_level = 1 - p_level
+    X = np.array(data)
+    N = len(X)
+    
+    # аппроксимация предельных распределений статистики критерия
+    сdf_beta_I = lambda x, a, b: sci.stats.beta.cdf(x, a, b, loc=0, scale=1)
+    g_beta_III = lambda z, δ: δ*z / (1+(δ-1)*z)
+    cdf_beta_III = lambda x, θ0, θ1, θ2, θ3, θ4: сdf_beta_I(g_beta_III((x - θ4)/θ3, θ2), θ0, θ1)
+    # набор параметров распределения
+    θ_1 = (1.8645, 2.5155, 5.8256, 0.9216, 0.0008)    # для 15 < n < 50
+    θ_2 = (1.7669, 2.1668, 6.7594, 0.91, 0.0016)    # для n >= 50
+    
+    if N >= 8:
+        # среднее арифметическое
+        X_mean = X.mean()
+        # центральный момент 2-го порядка
+        m2 = np.var(X, ddof = 0)
+        # расчетное значение статистики критерия
+        A = sqrt(2) * np.sum([exp(-(X[i] - X_mean)**2 / (4*m2)) for i in range(N)])
+        B = 2/N * np.sum(
+            [np.sum([exp(-(X[j] - X[k])**2 / (2*m2)) for j in range(0, k)]) 
+             for k in range(1, N)])
+        s_calc_EP = 1 + N / sqrt(3) + B - A
+        # табличное значение статистики критерия
+        Tep_table_df = pd.read_csv(
+            filepath_or_buffer='table/Epps_Pulley_test_table.csv',
+            sep=';',
+            index_col='n')
+        p_level_dict = {
+            0.9:   Tep_table_df.columns[0],
+            0.95:  Tep_table_df.columns[1],
+            0.975: Tep_table_df.columns[2],
+            0.99:  Tep_table_df.columns[3]}
+        f_lin = sci.interpolate.interp1d(Tep_table_df.index, Tep_table_df[p_level_dict[p_level]])
+        s_table_EP = float(f_lin(N))
+        # проверка гипотезы
+        if 15 < N < 50:
+            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_1[0], θ_1[1], θ_1[2], θ_1[3], θ_1[4])
+            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
+        elif N >= 50:
+            a_calc_EP = 1 - cdf_beta_III(s_calc_EP, θ_2[0], θ_2[1], θ_2[2], θ_2[3], θ_2[4])
+            conclusion_EP = 'gaussian distribution' if a_calc_EP > a_level else 'not gaussian distribution'            
+        else:
+            a_calc_EP = ''              
+            conclusion_EP = 'gaussian distribution' if s_calc_EP <= s_table_EP else 'not gaussian distribution'            
+                
+    else:
+        s_calc_EP = '-'
+        s_table_EP = '-'
+        a_calc_EP = '-'
+        conclusion_EP = 'count less than 8'
+    
+    result = pd.DataFrame({
+        'test': ('Epps-Pulley test'),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'a_calc': (a_calc_EP),
+        'a_calc >= a_level': (a_calc_EP >= a_level if N > 15 else '-'),
+        'statistic': (s_calc_EP),
+        'critical_value': (s_table_EP),
+        'statistic < critical_value': (s_calc_EP < s_table_EP if N >= 8 else '-'),
+        'conclusion': (conclusion_EP)},
+        index=[1])  
+        
+    return result
+
+
+#------------------------------------------------------------------------------
+#   old Функция conjugacy_table_2x2_coefficient
+#------------------------------------------------------------------------------
+
+def conjugacy_table_2x2_independence_check (X, p_level=0.95):
+    a_level = 1 - p_level
+    data = np.array(X)  
+    a = data[0][0]
+    b = data[0][1]
+    c = data[1][0]
+    d = data[1][1]
+    n = a + b + c + d
+    
+    u_p = sps.norm.ppf((1 + p_level)/2, 0, 1)    # табл.значение квантиля норм.распр.
+    #print(u_p)
+    
+       
+    # Коэффициент ассоциации Юла
+    Q_calc = (a*d - b*c) / (a*d + b*c)    # расчетное значение коэффициента
+    DQ = 1/4 * (1-Q_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
+    Q_crit = u_p * sqrt(DQ)    # критическое значение коэффициента
+    conclusion_Q = 'significant' if abs(Q_calc) >= Q_crit else 'not significant'        
+    
+    # Коэффициент коллигации Юла
+    Y_calc = (sqrt(a*d) - sqrt(b*c)) / (sqrt(a*d) + sqrt(b*c))   # расчетное значение коэффициента
+    DY = 1/16 * (1-Y_calc**2) * (1/a + 1/b + 1/c + 1/d)    # дисперсия
+    Y_crit = u_p * sqrt(DY)    # критическое значение коэффициента
+    conclusion_Y = 'significant' if abs(Y_calc) >= Y_crit else 'not significant'
+    
+    # Коэффициент контингенции Пирсона
+    V_calc = (a*d - b*c) / sqrt((a + b)*(a + c)*(b + d)*(c + d))   # расчетное значение коэффициента
+    DV = 1/n * (1-V_calc**2) + \
+        1/n * (V_calc + 1/2 * V_calc**2) * ((a-d)**2 - (b-c)**2)/sqrt((a+b)*(a+c)*(b+d)*(c+d)) - \
+            3/(4*n)*V_calc**2 * (((a+b-c-d)**2 / ((a+b)*(c+d))) - ((a+c-b-d)**2 / ((a+c)*(b+d))))    # дисперсия
+    V_crit = u_p * sqrt(DV)    # критическое значение коэффициента
+    conclusion_V = 'significant' if abs(V_calc) >= V_crit else 'not significant'
+    
+    # градация значений коэффициентов
+    # шкала Эванса 1996 г. для психосоциальных исследований (https://medradiol.fmbafmbc.ru/journal_medradiol/abstracts/2019/6/12-24_Koterov_et_al.pdf)
+    #strength of relationship
+    check_Evans_scale = lambda r, measure_of_association: '-' if measure_of_association == 'not significant' else\
+        'very weak' if abs(r) < 0.2 else \
+            'weak' if abs(r) < 0.4 else \
+                'moderate' if abs(r) < 0.6 else \
+                    'strong' if abs(r) < 0.8 else \
+                        'very strong'
+    
+    # Создадим DataFrame для сводки результатов
+    coefficient = np.array([Q_calc, Y_calc, V_calc])
+    critical_value = (Q_crit, Y_crit, V_crit)
+    measure_of_association = (conclusion_Q, conclusion_Y, conclusion_V)
+    strength_of_relationship = np.vectorize(check_Evans_scale)(coefficient, measure_of_association)
+    
+    func_of_measure = lambda value, measure_of_association: value if measure_of_association == 'significant' else '-'
+    confidence_interval_min = func_of_measure(coefficient - critical_value, measure_of_association)
+    confidence_interval_max = func_of_measure(coefficient + critical_value, measure_of_association)
+                
+    result = pd.DataFrame({
+        'test': (
+            'Yule’s Coefficient of Association (Q)',
+            'Yule’s Coefficient of Colligation (Y)',
+            "Pearson's contingency coefficient (V)"),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'coefficient': coefficient,
+        'critical_value': critical_value,
+        '|coefficient| >= critical_value': (abs(coefficient) >= critical_value),
+        'measure of association': (measure_of_association),
+        'strength of relationship (Evans scale)': (strength_of_relationship),
+        'confidence interval min': (confidence_interval_min),
+        'confidence interval max': (confidence_interval_max)
+        })
+    return result
+
+ 
+
+#------------------------------------------------------------------------------
+#   old Функция conjugacy_table_IxJ_independence_check
+#------------------------------------------------------------------------------
+
+def conjugacy_table_IxJ_independence_check (X_in, p_level=0.95):
+    a_level = 1 - p_level
+    X = np.array(X_in)
+    #print(X, '\n')
+    result = []
+    
+    # параметры таблицы сопряженности
+    N_rows = X.shape[0]
+    N_cols = X.shape[1]
+    N = X.size
+    X_sum = np.sum(X)
+    
+    # проверка условия размерности таблицы 2х2
+    check_condition_2x2 = True if (N_rows == 2 and N_cols == 2) else False
+        
+    # проверка условий применимости критерия хи-квадрат
+    check_condition_chi2_1 = check_condition_chi2_2 = True
+    note_condition_chi2_1 = note_condition_chi2_2 = ''
+        
+    if X_sum < 50:
+        check_condition_chi2_1 = False
+        note_condition_chi2_1 = 'sample size less than 50'
+                    
+    if check_condition_2x2:
+        if np.size(np.where(X.ravel() < 5)):    # Функция np.ravel() преобразует матрицу в одномерный вектор
+            check_condition_chi2_2 = False
+            note_condition_chi2_2 = 'frequency less than 5'
+    else:
+        if np.size(np.where(X.ravel() < 3)):
+            check_condition_chi2_2 = False
+            note_condition_chi2_2 = 'frequency less than 3'
+    
+    # ожидаемые частоты и предельные суммы
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.expected_freq.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.margins.html
+    
+    
+    # критерий хи-квадрат (без поправки Йетса)
+    # https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
+    s_calc_chi2 = '-'
+    critical_value_chi2 = '-'
+    significance_check_chi2_s = '-'
+    a_calc_chi2 = '-'
+    significance_check_chi2_a = '-'
+    
+    if check_condition_chi2_1 and check_condition_chi2_2:
+        (s_calc_chi2, p_chi2, dof_chi2, ex_chi2) = sci.stats.chi2_contingency(X, correction=False)
+        critical_value_chi2 = sci.stats.chi2.ppf(p_level, dof_chi2)
+        significance_check_chi2_s = s_calc_chi2 >= critical_value_chi2
+        a_calc_chi2 = p_chi2
+        # альтернативный расчет: a_calc_chi2 = 1 - sci.stats.chi2.cdf(s_calc_chi2, dof_chi2)
+        significance_check_chi2_a = a_calc_chi2 <= a_level
+        conclusion_chi2 = 'categories are not independent' if significance_check_chi2_s else 'categories are independent'
+    else:
+        conclusion_chi2 = note_condition_chi2_1 + ' ' + note_condition_chi2_2
+        
+    # критерий хи-квадрат (с поправкой Йетса) (только для таблиц 2х2)
+    # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
+    # https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0_%D0%99%D0%B5%D0%B9%D1%82%D1%81%D0%B0
+    s_calc_chi2_Yates = '-'
+    critical_value_chi2_Yates = '-'
+    significance_check_chi2_s_Yates = '-'
+    a_calc_chi2_Yates = '-'
+    significance_check_chi2_a_Yates = '-'
+    
+    if check_condition_2x2:
+        if check_condition_chi2_1 and check_condition_chi2_2:
+            (s_calc_chi2_Yates, p_chi2_Yates, dof_chi2_Yates, ex_chi2_Yates) = sci.stats.chi2_contingency(X, correction=True)
+            critical_value_chi2_Yates = sci.stats.chi2.ppf(p_level, dof_chi2_Yates)
+            significance_check_chi2_s_Yates = s_calc_chi2_Yates >= critical_value_chi2_Yates
+            a_calc_chi2_Yates = p_chi2_Yates
+            significance_check_chi2_a_Yates = a_calc_chi2_Yates <= a_level
+            conclusion_chi2_Yates = 'categories are not independent' if significance_check_chi2_s_Yates else 'categories are independent'
+        else:
+            conclusion_chi2_Yates = note_condition_chi2_1 + '   ' + note_condition_chi2_2                
+    else:
+        conclusion_chi2_Yates = 'not 2x2'
+            
+    # относительный риск
+    # https://medstatistic.ru/methods/methods7.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.relative_risk.html#r092af754ff7d-1
+    
+    # точный критерий Фишера (Fisher's exact test) (односторонний)
+    # https://en.wikipedia.org/wiki/Fisher's_exact_test
+    # https://ru.wikipedia.org/wiki/%D0%A2%D0%BE%D1%87%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D1%81%D1%82_%D0%A4%D0%B8%D1%88%D0%B5%D1%80%D0%B0
+    # https://medstatistic.ru/methods/methods5.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fisher_exact.html
+        
+    # точный критерий Фишера (Fisher's exact test) (двусторонний)
+    p_Fisher_two_sided = '-'
+    significance_check_Fisher_two_sided = '-'
+    a_calc_Fisher_two_sided = '-'
+    significance_check_Fisher_two_sided = '-'
+    conclusion_Fisher_two_sided = '-'
+    
+    if check_condition_2x2:
+        (oddsr_Fisher_two_sided, p_Fisher_two_sided) = sci.stats.fisher_exact(X, alternative='two-sided')
+        a_calc_Fisher_two_sided = p_Fisher_two_sided
+        significance_check_Fisher_two_sided = a_calc_Fisher_two_sided <= a_level
+        conclusion_Fisher_two_sided = 'categories are not independent' if significance_check_Fisher_two_sided else 'categories are independent'
+    else:
+        conclusion_Fisher_two_sided = 'not 2x2'
+            
+    # отношение шансов (odds ratio)
+    # https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D0%BD%D0%BE%D1%88%D0%B5%D0%BD%D0%B8%D0%B5_%D1%88%D0%B0%D0%BD%D1%81%D0%BE%D0%B2
+    odds_ratio_calc = '-'
+    significance_check_odds_ratio = '-'
+    a_calc_odds_ratio = '-'
+    significance_check_odds_ratio = '-'
+    conclusion_odds_ratio = '-'
+    
+    if check_condition_2x2:
+        odds_ratio_calc = oddsr_Fisher_two_sided
+    else:
+        conclusion_odds_ratio = 'not 2x2'
+        
+    # тест Барнарда 
+    # https://en.wikipedia.org/wiki/Barnard's_test
+    # https://wikidea.ru/wiki/Barnard%27s_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.barnard_exact.html
+    s_calc_Barnard = '-'
+    critical_value_Barnard = '-'
+    significance_check_Barnard = '-'
+    a_calc_Barnard = '-'
+    significance_check_Barnard = '-'
+    
+    if check_condition_2x2:
+        res = sci.stats.barnard_exact(X, alternative='two-sided')
+        s_calc_Barnard = res.statistic
+        a_calc_Barnard = res.pvalue
+        significance_check_Barnard = a_calc_Barnard <= a_level
+        conclusion_Barnard = 'categories are not independent' if significance_check_Barnard else 'categories are independent'
+    else:
+        conclusion_Barnard = 'not 2x2'
+        
+    # тест Бошлу 
+    # https://en.wikipedia.org/wiki/Boschloo%27s_test
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.boschloo_exact.html
+    s_calc_Boschloo = '-'
+    critical_value_Boschloo = '-'
+    significance_check_Boschloo = '-'
+    a_calc_Boschloo = '-'
+    significance_check_Boschloo = '-'
+    
+    if check_condition_2x2:
+        res = sci.stats.boschloo_exact(X, alternative='two-sided')
+        s_calc_Boschloo = res.statistic
+        a_calc_Boschloo = res.pvalue
+        significance_check_Boschloo = a_calc_Boschloo <= a_level
+        conclusion_Boschloo = 'categories are not independent' if significance_check_Boschloo else 'categories are independent'
+    else:
+        conclusion_Boschloo = 'not 2x2'        
+
+    # заполним DataFrame для сводки результатов
+    result = pd.DataFrame({
+        'test': (
+            'Chi-squared test',
+            "Chi-squared test (with Yates's correction for 2x2)",
+            "Fisher's exact test (two-sided)",
+            "Odds ratio",
+            "Barnard's exact test",
+            "Boschloo's exact test"),
+        'p_level': (p_level),
+        'a_level': (a_level),
+        'statistic': [s_calc_chi2, s_calc_chi2_Yates, '-', odds_ratio_calc, s_calc_Barnard, s_calc_Boschloo],
+        'critical_value': [
+            critical_value_chi2, 
+            critical_value_chi2_Yates, 
+            '-', '', 
+            critical_value_Barnard, 
+            critical_value_Boschloo],
+        'statistic >= critical_value': [
+            significance_check_chi2_s,
+            significance_check_chi2_s_Yates,
+            '-', '',
+            s_calc_Barnard,
+            s_calc_Boschloo],
+        'a_calc': [a_calc_chi2, a_calc_chi2_Yates, a_calc_Fisher_two_sided, '', a_calc_Barnard, a_calc_Boschloo],
+        'a_calc <= a_level': [
+            significance_check_chi2_a,
+            significance_check_chi2_a_Yates,
+            significance_check_Fisher_two_sided,
+            '', 
+            significance_check_Barnard, 
+            significance_check_Boschloo],
+        'conclusion': [
+            conclusion_chi2,
+            conclusion_chi2_Yates,
+            conclusion_Fisher_two_sided,
+            '',
+            conclusion_Barnard,
+            conclusion_Boschloo]
+        })
+
+    return result
+
+
+
+#------------------------------------------------------------------------------
+#   old Функция graph_contingency_tables_bar_pd
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_bar_pd(
+    data_pd,
+    A_name = None, B_name = None, 
+    graph_size=(210/INCH, 297/INCH/2),
+    part_table=1/5,    # часть графика, выделяемая под таблицу с данными
+    title_figure=None, title_figure_fontsize=16,
+    file_name=None):
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size, constrained_layout=True)
+    n_rows = int(1/part_table)
+    gs = mpl.gridspec.GridSpec(nrows=n_rows, ncols=2, figure=fig)
+    ax1_1 = fig.add_subplot(gs[0:n_rows-1, 0:1])
+    ax1_2 = fig.add_subplot(gs[n_rows-1, 0:1])
+    ax2_1 = fig.add_subplot(gs[0:n_rows-1, 1:])
+    ax2_2 = fig.add_subplot(gs[n_rows-1, 1:])
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    ax1_1.set_title('Absolute values', fontsize=14)
+    ax2_1.set_title('Relative values', fontsize=14)
+    
+    # столбчатая диаграмма с абсолютными значениями
+    data_pd.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        ax=ax1_1)
+    ax1_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    ax1_2.set_axis_off()
+    table_1 = ax1_2.table(
+        cellText=np.fliplr(np.array(data_pd)).T,
+        rowLabels=data_pd.columns,
+        #colLabels=df.index[0:3],
+        cellLoc='center',
+        loc='center')
+    table_1.set_fontsize(12)
+    table_1.scale(1, 3)
+    
+    # столбчатая диаграмма с относительными значениями
+    data_relative = data_pd.copy()
+    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+
+    data_relative.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        color=['lightblue', 'wheat'],
+        ax=ax2_1)
+    ax2_1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    ax2_2.set_axis_off()
+    table_2 = ax2_2.table(
+        cellText=np.fliplr(np.array(data_relative)).T,
+        rowLabels=data_relative.columns,
+        #colLabels=df.index[0:3],
+        cellLoc='center',
+        loc='center')
+    table_2.set_fontsize(12)
+    table_2.scale(1, 3)
+    
+    fig.tight_layout()
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   old Функция graph_contingency_tables_freqint_pd
+#------------------------------------------------------------------------------
+
+def graph_contingency_tables_bar_freqint_pd(
+    data_pd,
+    A_name = None, B_name = None, 
+    graph_size=(297/INCH, 210/INCH/1.5),
+    title_figure=None, title_figure_fontsize=16,
+    file_name=None):
+    
+    # создание рисунка (Figure) и области рисования (Axes)
+    fig = plt.figure(figsize=graph_size, constrained_layout=True)
+    ax1 = plt.subplot(1,3,1)
+    ax2 = plt.subplot(1,3,2)
+    ax3 = plt.subplot(1,3,3)
+    # заголовок рисунка (Figure)
+    fig.suptitle(title_figure, fontsize = title_figure_fontsize)
+    ax2.set_title('Relative values', fontsize=14)
+    
+    # столбчатая диаграмма с абсолютными значениями
+    data_pd.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        ax=ax1)
+    ax1.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    ax1.set_title('Absolute values', fontsize=14)
+    
+    # столбчатая диаграмма с относительными значениями
+    data_relative = data_pd.copy()
+    data_relative.iloc[:,0] = round(data_pd.iloc[:,0] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+    data_relative.iloc[:,1] = round(data_pd.iloc[:,1] / (data_pd.iloc[:,0] + data_pd.iloc[:,1]), 4)
+
+    data_relative.plot.bar(
+        stacked=True,
+        rot=0,
+        legend=True,
+        color=['lightblue', 'wheat'],
+        ax=ax2)
+    ax2.legend(loc='best', fontsize = 12, title=data_pd.columns.name)
+    
+    # график взаимодействия частот
+    sns.lineplot(
+        data=data_pd,
+        dashes=False,
+        lw=3,
+        #markers=['o','o'],
+        markersize=10,
+        ax=ax3)
+    ax3.set_title('Graph of frequency interactions', fontsize=14)
+    ax3.set_xticks(list(data_pd.index))
+        
+    fig.tight_layout()
+        
+    plt.show()
+    if file_name:
+        fig.savefig(file_name, orientation = "portrait", dpi = 300)
+        
+    return
+
+
+
+#------------------------------------------------------------------------------
+#   old Функция Mann_Whitney_test_trend_check
+#
+#   Проверяет гипотезу о наличии тренда (т.е. существенном различии двух частей
+#   временного ряда) по критерию Манна-Уитни
+#------------------------------------------------------------------------------    
+
+def Mann_Whitney_test_trend_check(
+        data1, data2,    # два части, на которые следует разбить исходный массив значений
+        use_continuity=True,    # поправка на непрерывность
+        alternative='two-sided',    # вид альтернативной гипотезы
+        method='auto',    # метод расчета уровня значимости
+        p_level=0.95,
+        DecPlace=5):
+    
+    a_level = 1 - p_level
+        
+    result = sps.mannwhitneyu(
+        data1, data2,
+        use_continuity=use_continuity,
+        alternative=alternative,
+        method=method)
+    s_calc = result.statistic    # расчетное значение статистики критерия
+    a_calc = result.pvalue    # расчетный уровень значимости
+    
+    print(f"Расчетное значение статистики критерия: s_calc = {round(s_calc, DecPlace)}")
+    print(f"Расчетный уровень значимости: a_calc = {round(a_calc, DecPlace)}")
+    print(f"Заданный уровень значимости: a_level = {round(a_level, DecPlace)}")
+          
+    if a_calc >= a_level:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} >= a_level = {round(a_level, DecPlace)}" + \
+            ", то нулевая гипотеза об отсутствии сдвига в выборках ПРИНИМАЕТСЯ, т.е. сдвиг ОТСУТСТВУЕТ"
+    else:
+        conclusion_ShW_test = f"Так как a_calc = {round(a_calc, DecPlace)} < a_level = {round(a_level, DecPlace)}" + \
+            ", то нулевая гипотеза об отсутствии сдвига в выборках ОТКЛОНЯЕТСЯ, т.е. сдвиг ПРИСУТСТВУЕТ"
+    print(conclusion_ShW_test)
+    return    
 
     
